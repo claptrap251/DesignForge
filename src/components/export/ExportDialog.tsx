@@ -8,17 +8,17 @@ interface ExportDialogProps {
   onClose: () => void;
 }
 
-type ExportFormat = "md" | "pdf" | "docx" | "confluence";
+type ExportFormat = "md" | "html" | "docx" | "confluence";
 
 const FORMAT_OPTIONS: { value: ExportFormat; label: string; description: string }[] = [
   { value: "md", label: "Markdown", description: "Export as .md file with embedded comments" },
-  { value: "pdf", label: "PDF", description: "Export as PDF document with rendered diagrams" },
-  { value: "docx", label: "Word", description: "Export as .docx document with rendered diagrams" },
+  { value: "html", label: "HTML", description: "Export as .html with rendered Mermaid diagrams (print to PDF from browser)" },
+  { value: "docx", label: "Word", description: "Export as .docx document with diagram source code" },
   { value: "confluence", label: "Confluence", description: "Export as Confluence-compatible markup" },
 ];
 
 export default function ExportDialog({ projectId, open, onClose }: ExportDialogProps) {
-  const [format, setFormat] = useState<ExportFormat>("md");
+  const [format, setFormat] = useState<ExportFormat>("html");
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

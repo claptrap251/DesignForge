@@ -3,7 +3,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import { markdownToHtmlWithMermaid, containsMermaid } from "./mermaid-utils";
 
-export async function exportToPdf(projectId: string): Promise<Buffer> {
+export async function exportToHtml(projectId: string): Promise<Buffer> {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     include: {

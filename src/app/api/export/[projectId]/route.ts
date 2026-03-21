@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { exportToMarkdown } from "@/lib/export/markdown";
-import { exportToPdf } from "@/lib/export/pdf";
+import { exportToHtml } from "@/lib/export/html";
 import { exportToDocx } from "@/lib/export/docx";
 import { exportToConfluence } from "@/lib/export/confluence";
 
@@ -47,12 +47,12 @@ export async function GET(
       });
     }
 
-    case "pdf": {
-      const pdfBuffer = await exportToPdf(projectId);
-      return new NextResponse(new Uint8Array(pdfBuffer), {
+    case "html": {
+      const htmlBuffer = await exportToHtml(projectId);
+      return new NextResponse(new Uint8Array(htmlBuffer), {
         headers: {
-          "Content-Type": "application/pdf",
-          "Content-Disposition": `attachment; filename="${project.name}.pdf"`,
+          "Content-Type": "text/html; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${project.name}.html"`,
         },
       });
     }
@@ -70,7 +70,7 @@ export async function GET(
 
     default:
       return NextResponse.json(
-        { error: "Unsupported format. Use: md, pdf, docx, confluence" },
+        { error: "Unsupported format. Use: md, html, docx, confluence" },
         { status: 400 }
       );
   }
