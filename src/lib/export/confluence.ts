@@ -40,7 +40,35 @@ export async function exportToConfluence(projectId: string): Promise<string> {
       if (design.type === "IMAGE" && design.filePath) {
         html += `<ac:image><ri:attachment ri:filename="${esc(design.filePath)}" /></ac:image>\n`;
       } else if (design.type === "MARKDOWN" && design.content) {
-        html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${design.content}]]></ac:plain-text-body></ac:structured-macro>\n`;
+        // Split markdown into text parts and mermaid blocks
+        const mermaidRegex = /```mermaid\s*\n([\s\S]*?)```/g;
+        let lastIdx = 0;
+        let mermaidMatch;
+        let hasParts = false;
+
+        while ((mermaidMatch = mermaidRegex.exec(design.content)) !== null) {
+          hasParts = true;
+          // Add text before this mermaid block
+          const before = design.content.slice(lastIdx, mermaidMatch.index).trim();
+          if (before) {
+            html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${before}]]></ac:plain-text-body></ac:structured-macro>\n`;
+          }
+          // Add mermaid block as a dedicated code block with mermaid language
+          const mermaidCode = mermaidMatch[1].trim();
+          html += `<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[${mermaidCode}]]></ac:plain-text-body></ac:structured-macro>\n`;
+          lastIdx = mermaidMatch.index + mermaidMatch[0].length;
+        }
+
+        // Add remaining text after the last mermaid block
+        const remaining = design.content.slice(lastIdx).trim();
+        if (remaining) {
+          html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${remaining}]]></ac:plain-text-body></ac:structured-macro>\n`;
+        }
+
+        // If no mermaid blocks found, render the whole content
+        if (!hasParts) {
+          html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${design.content}]]></ac:plain-text-body></ac:structured-macro>\n`;
+        }
       }
 
       if (design.comments.length > 0) {

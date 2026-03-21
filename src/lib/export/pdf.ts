@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/db";
+import { readFile } from "fs/promises";
+import path from "path";
+import { markdownToHtmlWithMermaid, containsMermaid } from "./mermaid-utils";
 
 export async function exportToPdf(projectId: string): Promise<Buffer> {
   const project = await prisma.project.findUnique({
@@ -27,8 +30,40 @@ export async function exportToPdf(projectId: string): Promise<Buffer> {
     return Buffer.from("Project not found");
   }
 
-  // Generate a styled HTML document that can be printed to PDF
-  // Using HTML-to-PDF approach for simplicity and reliability
+  // Check if any design has mermaid content
+  let hasMermaid = false;
+  for (const folder of project.folders) {
+    for (const design of folder.designs) {
+      if (design.type === "MARKDOWN" && design.content && containsMermaid(design.content)) {
+        hasMermaid = true;
+        break;
+      }
+    }
+    if (hasMermaid) break;
+  }
+
+  // Load mermaid JS from node_modules if needed (bundled inline, no external calls)
+  let mermaidScript = "";
+  if (hasMermaid) {
+    try {
+      const mermaidPath = path.join(process.cwd(), "node_modules", "mermaid", "dist", "mermaid.min.js");
+      const mermaidJs = await readFile(mermaidPath, "utf-8");
+      mermaidScript = `<script>${mermaidJs}</script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>`;
+    } catch {
+      // Fallback: try the ESM bundle
+      try {
+        const mermaidPath = path.join(process.cwd(), "node_modules", "mermaid", "dist", "mermaid.core.mjs");
+        const mermaidJs = await readFile(mermaidPath, "utf-8");
+        mermaidScript = `<script type="module">${mermaidJs}
+mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>`;
+      } catch {
+        // If we can't load mermaid, diagrams will show as code
+        mermaidScript = "";
+      }
+    }
+  }
+
   let html = `<!DOCTYPE html>
 <html>
 <head>
@@ -51,6 +86,9 @@ export async function exportToPdf(projectId: string): Promise<Buffer> {
   th, td { border: 1px solid #E5E7EB; padding: 8px; text-align: left; font-size: 13px; }
   th { background: #F9FAFB; font-weight: 600; }
   .markdown-content { background: #F9FAFB; padding: 16px; border-radius: 8px; margin: 8px 0; }
+  .markdown-text pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; }
+  .mermaid { display: flex; justify-content: center; padding: 16px; margin: 16px 0; background: white; border: 1px solid #E5E7EB; border-radius: 8px; }
+  @media print { .mermaid svg { max-width: 100%; } }
 </style>
 </head>
 <body>`;
@@ -67,7 +105,11 @@ export async function exportToPdf(projectId: string): Promise<Buffer> {
       html += `<h3>${esc(design.name)} <span class="meta">(${design.type})</span></h3>`;
 
       if (design.type === "MARKDOWN" && design.content) {
-        html += `<div class="markdown-content"><pre>${esc(design.content)}</pre></div>`;
+        if (containsMermaid(design.content)) {
+          html += `<div class="markdown-content">${markdownToHtmlWithMermaid(design.content)}</div>`;
+        } else {
+          html += `<div class="markdown-content"><pre>${esc(design.content)}</pre></div>`;
+        }
       }
 
       if (design.comments.length > 0) {
@@ -94,9 +136,9 @@ export async function exportToPdf(projectId: string): Promise<Buffer> {
     }
   }
 
+  html += mermaidScript;
   html += `</body></html>`;
 
-  // Return as HTML buffer - browsers can print to PDF, or use a server-side tool
   return Buffer.from(html, "utf-8");
 }
 

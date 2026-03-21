@@ -8,17 +8,17 @@ interface ExportDialogProps {
   onClose: () => void;
 }
 
-type ExportFormat = "markdown" | "pdf" | "word" | "confluence";
+type ExportFormat = "md" | "pdf" | "docx" | "confluence";
 
 const FORMAT_OPTIONS: { value: ExportFormat; label: string; description: string }[] = [
-  { value: "markdown", label: "Markdown", description: "Export as .md file with embedded comments" },
-  { value: "pdf", label: "PDF", description: "Export as PDF document" },
-  { value: "word", label: "Word", description: "Export as .docx document" },
+  { value: "md", label: "Markdown", description: "Export as .md file with embedded comments" },
+  { value: "pdf", label: "PDF", description: "Export as PDF document with rendered diagrams" },
+  { value: "docx", label: "Word", description: "Export as .docx document with rendered diagrams" },
   { value: "confluence", label: "Confluence", description: "Export as Confluence-compatible markup" },
 ];
 
 export default function ExportDialog({ projectId, open, onClose }: ExportDialogProps) {
-  const [format, setFormat] = useState<ExportFormat>("markdown");
+  const [format, setFormat] = useState<ExportFormat>("md");
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +35,7 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
     setError(null);
 
     try {
-      const res = await fetch(`/api/projects/${projectId}/export?format=${format}`);
+      const res = await fetch(`/api/export/${projectId}?format=${format}`);
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -44,7 +44,7 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
 
       const blob = await res.blob();
       const contentDisposition = res.headers.get("Content-Disposition");
-      let filename = `export.${format === "word" ? "docx" : format === "confluence" ? "xml" : format}`;
+      let filename = `export.${format === "confluence" ? "html" : format}`;
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="?(.+?)"?$/);
         if (match) filename = match[1];
