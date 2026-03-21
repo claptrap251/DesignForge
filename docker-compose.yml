@@ -1,0 +1,13 @@
+services:
+  designforge:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/uploads:/app/uploads
+      - ./data/db:/app/prisma
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - NEXTAUTH_SECRET=change-me-to-a-random-secret
+      - NEXTAUTH_URL=http://localhost:3000
+    restart: unless-stopped

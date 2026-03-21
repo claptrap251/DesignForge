@@ -1,0 +1,116 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  username     String    @unique
+  email        String?
+  name         String?
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  projects     Project[]
+  comments     Comment[]
+  replies      Reply[]
+}
+
+model Project {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  ownerId     String?
+  owner       User?       @relation(fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  folders     Folder[]
+  shareLinks  ShareLink[]
+}
+
+model Folder {
+  id        String   @id @default(cuid())
+  name      String
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[] @relation("FolderTree")
+  order     Int      @default(0)
+  designs   Design[]
+  createdAt DateTime @default(now())
+}
+
+model Design {
+  id             String           @id @default(cuid())
+  name           String
+  type           String           // IMAGE or MARKDOWN
+  filePath       String?          // for images (current version)
+  content        String?          // for markdown (current version)
+  currentVersion Int              @default(1)
+  folderId       String
+  folder         Folder           @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  order          Int              @default(0)
+  comments       Comment[]
+  versions       DesignVersion[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model DesignVersion {
+  id        String   @id @default(cuid())
+  designId  String
+  design    Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+  version   Int
+  filePath  String?  // for images
+  content   String?  // for markdown
+  changeNote String?
+  createdAt DateTime @default(now())
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  designId  String
+  design    Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+  xPercent  Float?
+  yPercent  Float?
+  pinNumber Int
+  content   String
+  authorName String
+  authorId  String?
+  author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  resolved  Boolean  @default(false)
+  anchorLine    Int?
+  anchorHeading String?
+  anchorContext String?
+  contextBefore String?
+  contextAfter  String?
+  replies   Reply[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reply {
+  id         String   @id @default(cuid())
+  commentId  String
+  comment    Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  content    String
+  authorName String
+  authorId   String?
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+  createdAt  DateTime @default(now())
+}
+
+model ShareLink {
+  id           String    @id @default(cuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  folderId     String?
+  token        String    @unique
+  passwordHash String?
+  expiresAt    DateTime?
+  createdAt    DateTime  @default(now())
+}

@@ -1,0 +1,101 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f9fafb;
+  --foreground: #111827;
+}
+
+.dark {
+  --background: #111827;
+  --foreground: #f9fafb;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.mermaid {
+  display: flex;
+  justify-content: center;
+  margin: 1rem 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 640px) {
+  .mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.has-comment-highlight {
+  background-color: #fef3c7;
+  border-radius: 0.25rem;
+  transition: background-color 0.3s;
+}
+
+.dark .has-comment-highlight {
+  background-color: #78350f;
+}
+
+[data-source-line].cursor-crosshair-children {
+  cursor: crosshair;
+}
+
+/* Markdown prose table styling */
+.prose table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid #d1d5db;
+  padding: 0.625rem 1rem;
+  text-align: left;
+  line-height: 1.625;
+}
+
+.prose th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.prose tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.dark .prose th,
+.dark .prose td {
+  border-color: #4b5563;
+}
+
+.dark .prose th {
+  background-color: #374151;
+}
+
+.dark .prose tbody tr:nth-child(even) {
+  background-color: #1f2937;
+}
+
+/* Ensure adequate line spacing in prose */
+.prose p,
+.prose li {
+  line-height: 1.8;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.5em;
+}
