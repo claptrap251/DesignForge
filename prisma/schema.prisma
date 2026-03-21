@@ -44,17 +44,30 @@ model Folder {
 }
 
 model Design {
-  id        String    @id @default(cuid())
-  name      String
-  type      String    // IMAGE or MARKDOWN
-  filePath  String?   // for images
-  content   String?   // for markdown
-  folderId  String
-  folder    Folder    @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  order     Int       @default(0)
-  comments  Comment[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id             String           @id @default(cuid())
+  name           String
+  type           String           // IMAGE or MARKDOWN
+  filePath       String?          // for images (current version)
+  content        String?          // for markdown (current version)
+  currentVersion Int              @default(1)
+  folderId       String
+  folder         Folder           @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  order          Int              @default(0)
+  comments       Comment[]
+  versions       DesignVersion[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model DesignVersion {
+  id        String   @id @default(cuid())
+  designId  String
+  design    Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
+  version   Int
+  filePath  String?  // for images
+  content   String?  // for markdown
+  changeNote String?
+  createdAt DateTime @default(now())
 }
 
 model Comment {

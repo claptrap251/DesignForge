@@ -8,6 +8,8 @@ import ImageViewer from "@/components/design/ImageViewer";
 import MarkdownViewer from "@/components/design/MarkdownViewer";
 import PinLayer from "@/components/comments/PinLayer";
 import CommentSidebar from "@/components/comments/CommentSidebar";
+import VersionHistory from "@/components/design/VersionHistory";
+import UploadNewVersion from "@/components/design/UploadNewVersion";
 
 export default function DesignViewerPage() {
   const { data: session } = useSession();
@@ -19,6 +21,8 @@ export default function DesignViewerPage() {
   const [design, setDesign] = useState<any>(null);
   const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null);
   const [isAddMode, setIsAddMode] = useState(false);
+  const [showUploadVersion, setShowUploadVersion] = useState(false);
+  const [viewingVersion, setViewingVersion] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchDesign = useCallback(async () => {
@@ -116,6 +120,38 @@ export default function DesignViewerPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          {viewingVersion && viewingVersion.version !== design.currentVersion && (
+            <button
+              onClick={() => setViewingVersion(null)}
+              className="flex items-center gap-1 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-200"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Back to current (v{design.currentVersion})
+            </button>
+          )}
+          <VersionHistory
+            versions={design.versions || []}
+            currentVersion={design.currentVersion || 1}
+            designType={design.type}
+            onViewVersion={(version) => {
+              if (version.version === design.currentVersion) {
+                setViewingVersion(null);
+              } else {
+                setViewingVersion(version);
+              }
+            }}
+          />
+          <button
+            onClick={() => setShowUploadVersion(true)}
+            className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+            </svg>
+            New Version
+          </button>
           <button
             onClick={() => setIsAddMode(!isAddMode)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1 ${
@@ -143,12 +179,28 @@ export default function DesignViewerPage() {
         </div>
       </div>
 
+      {/* Viewing old version banner */}
+      {viewingVersion && viewingVersion.version !== design.currentVersion && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-sm text-amber-800">
+          Viewing version {viewingVersion.version} of {design.versions?.length || 1}
+          {viewingVersion.changeNote && (
+            <span className="ml-2 text-amber-600">— {viewingVersion.changeNote}</span>
+          )}
+        </div>
+      )}
+
       {/* Main content with sidebar */}
       <div className="flex-1 flex overflow-hidden">
         {/* Design viewer */}
         <div className="flex-1 relative overflow-auto bg-gray-100">
           {design.type === "IMAGE" ? (
-            <ImageViewer src={`/api/uploads/${design.filePath}`}>
+            <ImageViewer
+              src={
+                viewingVersion && viewingVersion.version !== design.currentVersion
+                  ? `/api/uploads/${viewingVersion.filePath}`
+                  : `/api/uploads/${design.filePath}`
+              }
+            >
               <PinLayer
                 comments={design.comments || []}
                 selectedCommentId={selectedCommentId}
@@ -158,7 +210,13 @@ export default function DesignViewerPage() {
               />
             </ImageViewer>
           ) : (
-            <MarkdownViewer content={design.content || ""}>
+            <MarkdownViewer
+              content={
+                viewingVersion && viewingVersion.version !== design.currentVersion
+                  ? viewingVersion.content || ""
+                  : design.content || ""
+              }
+            >
               <PinLayer
                 comments={design.comments || []}
                 selectedCommentId={selectedCommentId}
@@ -179,6 +237,21 @@ export default function DesignViewerPage() {
           onSelectComment={setSelectedCommentId}
         />
       </div>
+
+      {/* Upload new version modal */}
+      {showUploadVersion && (
+        <UploadNewVersion
+          designId={designId}
+          designType={design.type}
+          currentContent={design.type === "MARKDOWN" ? design.content : null}
+          onComplete={() => {
+            setShowUploadVersion(false);
+            setViewingVersion(null);
+            fetchDesign();
+          }}
+          onClose={() => setShowUploadVersion(false)}
+        />
+      )}
     </div>
   );
 }

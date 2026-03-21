@@ -74,8 +74,17 @@ export async function POST(request: NextRequest) {
       filePath,
       content: markdownContent,
       folderId,
+      currentVersion: 1,
       order: (maxOrder._max.order ?? -1) + 1,
+      versions: {
+        create: {
+          version: 1,
+          filePath,
+          content: markdownContent,
+        },
+      },
     },
+    include: { versions: true },
   });
 
   return NextResponse.json(design, { status: 201 });
