@@ -5,12 +5,28 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 export async function POST(request: NextRequest) {
-  const formData = await request.formData();
-  const name = formData.get("name") as string;
-  const type = formData.get("type") as string;
-  const folderId = formData.get("folderId") as string;
-  const file = formData.get("file") as File | null;
-  const content = formData.get("content") as string | null;
+  const contentType = request.headers.get("content-type") || "";
+
+  let name: string | null = null;
+  let type: string | null = null;
+  let folderId: string | null = null;
+  let file: File | null = null;
+  let content: string | null = null;
+
+  if (contentType.includes("application/json")) {
+    const body = await request.json();
+    name = body.name;
+    type = (body.type as string)?.toUpperCase() || null;
+    folderId = body.folderId;
+    content = body.content;
+  } else {
+    const formData = await request.formData();
+    name = formData.get("name") as string;
+    type = (formData.get("type") as string)?.toUpperCase() || null;
+    folderId = formData.get("folderId") as string;
+    file = formData.get("file") as File | null;
+    content = formData.get("content") as string | null;
+  }
 
   if (!name || !type || !folderId) {
     return NextResponse.json(

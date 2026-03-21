@@ -18,9 +18,9 @@ export function markdownToHtmlWithMermaid(content: string): string {
       result += `<div class="markdown-text"><pre>${esc(before)}</pre></div>`;
     }
 
-    // Add the mermaid block as a renderable diagram
+    // Add the mermaid block as a renderable diagram (NOT escaped - mermaid parses raw text)
     const mermaidCode = match[1].trim();
-    result += `<div class="mermaid">${esc(mermaidCode)}</div>`;
+    result += `<div class="mermaid">${mermaidCode}</div>`;
 
     lastIndex = match.index + match[0].length;
   }
