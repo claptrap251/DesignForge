@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { containsMermaid, markdownToHtmlWithMermaidSvg } from "./mermaid-utils";
+import { marked } from "marked";
 
 const HTML_STYLES = `
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #333; }
@@ -77,7 +78,8 @@ function renderCommentsHtml(comments: any[]): string {
 
 async function renderDesignContentHtml(content: string): Promise<{ html: string; needsFallback: boolean }> {
   if (!containsMermaid(content)) {
-    return { html: `<div class="markdown-content"><pre>${esc(content)}</pre></div>`, needsFallback: false };
+    const rendered = await marked.parse(content);
+    return { html: `<div class="markdown-content">${rendered}</div>`, needsFallback: false };
   }
   try {
     const { html: rendered, needsFallback } = await markdownToHtmlWithMermaidSvg(content);
@@ -91,12 +93,12 @@ async function renderDesignContentHtml(content: string): Promise<{ html: string;
     let match;
     while ((match = mermaidBlockRegex.exec(content)) !== null) {
       const before = content.slice(lastIndex, match.index);
-      if (before.trim()) result += `<div class="markdown-text"><pre>${esc(before)}</pre></div>`;
+      if (before.trim()) result += `<div class="markdown-text">${await marked.parse(before)}</div>`;
       result += `<pre class="mermaid">${match[1].trim()}</pre>`;
       lastIndex = match.index + match[0].length;
     }
     const remaining = content.slice(lastIndex);
-    if (remaining.trim()) result += `<div class="markdown-text"><pre>${esc(remaining)}</pre></div>`;
+    if (remaining.trim()) result += `<div class="markdown-text">${await marked.parse(remaining)}</div>`;
     return { html: `<div class="markdown-content">${result}</div>`, needsFallback: true };
   }
 }

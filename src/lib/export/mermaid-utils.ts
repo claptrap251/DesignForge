@@ -4,6 +4,7 @@
  */
 
 import { JSDOM } from "jsdom";
+import { marked } from "marked";
 
 // Persistent jsdom instance for mermaid rendering — mermaid is a singleton
 // that caches DOM references internally, so we must keep the same DOM alive.
@@ -227,7 +228,7 @@ export async function markdownToHtmlWithMermaidSvg(
   while ((match = mermaidBlockRegex.exec(content)) !== null) {
     const before = content.slice(lastIndex, match.index);
     if (before.trim()) {
-      result += `<div class="markdown-text"><pre>${esc(before)}</pre></div>`;
+      result += `<div class="markdown-text">${await marked.parse(before)}</div>`;
     }
 
     const mermaidCode = match[1].trim();
@@ -245,7 +246,7 @@ export async function markdownToHtmlWithMermaidSvg(
 
   const remaining = content.slice(lastIndex);
   if (remaining.trim()) {
-    result += `<div class="markdown-text"><pre>${esc(remaining)}</pre></div>`;
+    result += `<div class="markdown-text">${await marked.parse(remaining)}</div>`;
   }
 
   return { html: result, needsFallback };
@@ -260,10 +261,10 @@ export function markdownToHtmlWithMermaid(content: string): string {
 
   let match;
   while ((match = mermaidBlockRegex.exec(content)) !== null) {
-    // Add the markdown before this mermaid block as escaped text
+    // Add the markdown before this mermaid block as rendered HTML
     const before = content.slice(lastIndex, match.index);
     if (before.trim()) {
-      result += `<div class="markdown-text"><pre>${esc(before)}</pre></div>`;
+      result += `<div class="markdown-text">${marked.parse(before)}</div>`;
     }
 
     // Add the mermaid block as a renderable diagram (NOT escaped - mermaid parses raw text)
@@ -276,7 +277,7 @@ export function markdownToHtmlWithMermaid(content: string): string {
   // Add any remaining content after the last mermaid block
   const remaining = content.slice(lastIndex);
   if (remaining.trim()) {
-    result += `<div class="markdown-text"><pre>${esc(remaining)}</pre></div>`;
+    result += `<div class="markdown-text">${marked.parse(remaining)}</div>`;
   }
 
   return result;
