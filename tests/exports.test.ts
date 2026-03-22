@@ -158,25 +158,17 @@ describe("HTML Export", () => {
     });
   });
 
-  it("should include mermaid CDN script (not inline bundle)", async () => {
+  it("should render mermaid diagrams as inline SVGs", async () => {
     const buf = await exportToHtml(projectId);
     const html = buf.toString("utf-8");
 
-    // Should use CDN import, not an inline bundle
-    expect(html).toContain("cdn.jsdelivr.net/npm/mermaid");
-    expect(html).toContain("import mermaid from");
-    expect(html).toContain('type="module"');
-  });
-
-  it("should render mermaid blocks as unescaped div.mermaid elements", async () => {
-    const buf = await exportToHtml(projectId);
-    const html = buf.toString("utf-8");
-
-    // Mermaid diagram should be in a div.mermaid, NOT escaped
-    expect(html).toContain('<div class="mermaid">flowchart TD');
-    expect(html).toContain("A[Designer uploads design] --> B[Team notified]");
-    // Arrows should NOT be HTML-escaped inside mermaid divs
-    expect(html).not.toMatch(/<div class="mermaid">[\s\S]*?--&gt;/);
+    // Should contain pre-rendered SVG, not raw mermaid code or CDN script
+    expect(html).toContain("<svg");
+    expect(html).toContain('<div class="mermaid">');
+    expect(html).not.toContain("cdn.jsdelivr.net");
+    expect(html).not.toContain("import mermaid from");
+    // Raw mermaid source should NOT appear in the output
+    expect(html).not.toContain("flowchart TD");
   });
 
   it("should escape non-mermaid content properly", async () => {
@@ -197,7 +189,7 @@ describe("HTML Export", () => {
     expect(html).toContain("51.0%");
   });
 
-  it("should not include mermaid script when no mermaid content", async () => {
+  it("should not include SVGs when no mermaid content", async () => {
     await cleanDb();
     const project = await createTestProject();
     const folder = await createTestFolder(project.id, "Plain");
@@ -206,9 +198,8 @@ describe("HTML Export", () => {
     const buf = await exportToHtml(project.id);
     const html = buf.toString("utf-8");
 
-    expect(html).not.toContain("cdn.jsdelivr.net");
+    expect(html).not.toContain("<svg");
     expect(html).not.toContain('<div class="mermaid">');
-    expect(html).not.toContain("import mermaid from");
     expect(html).toContain("No diagrams here");
   });
 });

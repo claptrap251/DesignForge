@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/db";
-import { readFile } from "fs/promises";
-import path from "path";
-import { markdownToHtmlWithMermaid, containsMermaid } from "./mermaid-utils";
+import { markdownToHtmlWithMermaidSvg, containsMermaid } from "./mermaid-utils";
 
 export async function exportToHtml(projectId: string): Promise<Buffer> {
   const project = await prisma.project.findUnique({
@@ -30,36 +28,6 @@ export async function exportToHtml(projectId: string): Promise<Buffer> {
     return Buffer.from("Project not found");
   }
 
-  // Check if any design has mermaid content
-  let hasMermaid = false;
-  for (const folder of project.folders) {
-    for (const design of folder.designs) {
-      if (design.type === "MARKDOWN" && design.content && containsMermaid(design.content)) {
-        hasMermaid = true;
-        break;
-      }
-    }
-    if (hasMermaid) break;
-  }
-
-  // Load mermaid JS for rendering diagrams
-  let mermaidScript = "";
-  if (hasMermaid) {
-    // Read the installed mermaid version for the CDN URL
-    let mermaidVersion = "11";
-    try {
-      const pkgPath = path.join(process.cwd(), "node_modules", "mermaid", "package.json");
-      const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
-      mermaidVersion = pkg.version || mermaidVersion;
-    } catch {
-      // Fall back to major version
-    }
-    mermaidScript = `<script type="module">
-import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@${mermaidVersion}/dist/mermaid.esm.min.mjs';
-mermaid.initialize({ startOnLoad: true, theme: 'default' });
-</script>`;
-  }
-
   let html = `<!DOCTYPE html>
 <html>
 <head>
@@ -84,6 +52,7 @@ mermaid.initialize({ startOnLoad: true, theme: 'default' });
   .markdown-content { background: #F9FAFB; padding: 16px; border-radius: 8px; margin: 8px 0; }
   .markdown-text pre { white-space: pre-wrap; word-wrap: break-word; margin: 0; }
   .mermaid { display: flex; justify-content: center; padding: 16px; margin: 16px 0; background: white; border: 1px solid #E5E7EB; border-radius: 8px; }
+  .mermaid svg { max-width: 100%; height: auto; }
   @media print { .mermaid svg { max-width: 100%; } }
 </style>
 </head>
@@ -102,7 +71,8 @@ mermaid.initialize({ startOnLoad: true, theme: 'default' });
 
       if (design.type === "MARKDOWN" && design.content) {
         if (containsMermaid(design.content)) {
-          html += `<div class="markdown-content">${markdownToHtmlWithMermaid(design.content)}</div>`;
+          const rendered = await markdownToHtmlWithMermaidSvg(design.content);
+          html += `<div class="markdown-content">${rendered}</div>`;
         } else {
           html += `<div class="markdown-content"><pre>${esc(design.content)}</pre></div>`;
         }
@@ -132,7 +102,6 @@ mermaid.initialize({ startOnLoad: true, theme: 'default' });
     }
   }
 
-  html += mermaidScript;
   html += `</body></html>`;
 
   return Buffer.from(html, "utf-8");
