@@ -11,8 +11,9 @@ import {
   Packer,
   BorderStyle,
   ShadingType,
+  ImageRun,
 } from "docx";
-import { extractMermaidBlocks } from "./mermaid-utils";
+import { extractMermaidBlocks, renderMermaidToPng } from "./mermaid-utils";
 
 export async function exportToDocx(projectId: string): Promise<Buffer> {
   const project = await prisma.project.findUnique({
@@ -107,56 +108,60 @@ export async function exportToDocx(projectId: string): Promise<Buffer> {
               );
             }
 
-            // Add mermaid diagram block (as formatted source)
+            // Add mermaid diagram as rendered image
             if (i < mermaidBlocks.length) {
-              children.push(
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "Diagram (Mermaid)",
-                      bold: true,
-                      color: "4F46E5",
-                      size: 20,
-                    }),
-                  ],
-                  spacing: { before: 200 },
-                })
-              );
-
-              // Render each line of the mermaid source in a code-like style
-              const lines = mermaidBlocks[i].split("\n");
-              for (const line of lines) {
+              try {
+                const pngBuffer = await renderMermaidToPng(
+                  mermaidBlocks[i],
+                  `docx-diagram-${i}`
+                );
+                children.push(
+                  new Paragraph({
+                    children: [
+                      new ImageRun({
+                        data: pngBuffer,
+                        transformation: { width: 600, height: 400 },
+                        type: "png",
+                      }),
+                    ],
+                    spacing: { before: 200, after: 200 },
+                  })
+                );
+              } catch {
+                // Fallback: show source code if rendering fails
                 children.push(
                   new Paragraph({
                     children: [
                       new TextRun({
-                        text: line,
-                        font: "Courier New",
-                        size: 18,
+                        text: "Diagram (Mermaid)",
+                        bold: true,
+                        color: "4F46E5",
+                        size: 20,
                       }),
                     ],
-                    shading: {
-                      type: ShadingType.SOLID,
-                      color: "F3F4F6",
-                      fill: "F3F4F6",
-                    },
+                    spacing: { before: 200 },
                   })
                 );
+                const lines = mermaidBlocks[i].split("\n");
+                for (const line of lines) {
+                  children.push(
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: line,
+                          font: "Courier New",
+                          size: 18,
+                        }),
+                      ],
+                      shading: {
+                        type: ShadingType.SOLID,
+                        color: "F3F4F6",
+                        fill: "F3F4F6",
+                      },
+                    })
+                  );
+                }
               }
-
-              children.push(
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: "To view this diagram, paste the code above into a Mermaid renderer or open the PDF export.",
-                      italics: true,
-                      color: "9CA3AF",
-                      size: 16,
-                    }),
-                  ],
-                  spacing: { after: 200 },
-                })
-              );
             }
           }
         } else {

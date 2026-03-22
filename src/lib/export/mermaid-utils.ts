@@ -5,8 +5,15 @@
 
 import { JSDOM } from "jsdom";
 
-/** Render mermaid code to SVG server-side using jsdom */
-export async function renderMermaidToSvg(code: string, id: string): Promise<string> {
+// Persistent jsdom instance for mermaid rendering — mermaid is a singleton
+// that caches DOM references internally, so we must keep the same DOM alive.
+let mermaidDom: JSDOM | null = null;
+let mermaidInstance: any = null;
+let renderCounter = 0;
+
+function ensureMermaidDom(): JSDOM {
+  if (mermaidDom) return mermaidDom;
+
   const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
     pretendToBeVisual: true,
     url: "http://localhost",
@@ -32,11 +39,15 @@ export async function renderMermaidToSvg(code: string, id: string): Promise<stri
     return el;
   } as typeof dom.window.document.createElementNS;
 
-  // Set globals for mermaid — use defineProperty to override getter-only props
+  mermaidDom = dom;
+  return dom;
+}
+
+function setDomGlobals(dom: JSDOM): Record<string, PropertyDescriptor | undefined> {
   const globalKeys = [
     "window", "document", "navigator", "DOMParser",
     "XMLSerializer", "self", "Element", "HTMLElement",
-  ] as const;
+  ];
 
   const globalValues: Record<string, unknown> = {
     window: dom.window,
@@ -58,24 +69,51 @@ export async function renderMermaidToSvg(code: string, id: string): Promise<stri
       configurable: true,
     });
   }
+  return prevDescriptors;
+}
+
+function restoreDomGlobals(prevDescriptors: Record<string, PropertyDescriptor | undefined>) {
+  for (const [key, prev] of Object.entries(prevDescriptors)) {
+    if (prev) {
+      Object.defineProperty(globalThis, key, prev);
+    } else {
+      delete (globalThis as any)[key];
+    }
+  }
+}
+
+/** Render mermaid code to SVG server-side using jsdom */
+export async function renderMermaidToSvg(code: string, id: string): Promise<string> {
+  const dom = ensureMermaidDom();
+
+  // Clean up any leftover elements from previous renders
+  dom.window.document.body.innerHTML = "";
+
+  const prevDescriptors = setDomGlobals(dom);
 
   try {
-    const mermaid = (await import("mermaid")).default;
-    mermaid.initialize({ startOnLoad: false, theme: "default" });
-    const { svg } = await mermaid.render(id, code);
+    if (!mermaidInstance) {
+      mermaidInstance = (await import("mermaid")).default;
+    }
+    mermaidInstance.initialize({ startOnLoad: false, theme: "default" });
+
+    // Use unique IDs to avoid conflicts between renders
+    const uniqueId = `${id}-${renderCounter++}`;
+    const { svg } = await mermaidInstance.render(uniqueId, code);
     return svg;
   } finally {
-    // Restore globals
-    for (const key of globalKeys) {
-      const prev = prevDescriptors[key];
-      if (prev) {
-        Object.defineProperty(globalThis, key, prev);
-      } else {
-        delete (globalThis as any)[key];
-      }
-    }
-    dom.window.close();
+    restoreDomGlobals(prevDescriptors);
   }
+}
+
+/** Render mermaid code to PNG buffer for embedding in docx */
+export async function renderMermaidToPng(code: string, id: string): Promise<Buffer> {
+  const sharp = (await import("sharp")).default;
+  const svg = await renderMermaidToSvg(code, id);
+  // Replace width="100%" with a fixed pixel width for rasterization
+  const svgFixed = svg.replace(/width="100%"/, 'width="800"');
+  const pngBuffer = await sharp(Buffer.from(svgFixed)).png().toBuffer();
+  return Buffer.from(pngBuffer);
 }
 
 /** Convert markdown with mermaid blocks to HTML with pre-rendered SVGs */

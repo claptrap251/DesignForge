@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { renderMermaidToSvg } from "./mermaid-utils";
 
 export async function exportToConfluence(projectId: string): Promise<string> {
   const project = await prisma.project.findUnique({
@@ -46,6 +47,7 @@ export async function exportToConfluence(projectId: string): Promise<string> {
         let mermaidMatch;
         let hasParts = false;
 
+        let diagramIdx = 0;
         while ((mermaidMatch = mermaidRegex.exec(design.content)) !== null) {
           hasParts = true;
           // Add text before this mermaid block
@@ -53,9 +55,15 @@ export async function exportToConfluence(projectId: string): Promise<string> {
           if (before) {
             html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${before}]]></ac:plain-text-body></ac:structured-macro>\n`;
           }
-          // Add mermaid block as a dedicated code block with mermaid language
+          // Render mermaid block as inline SVG
           const mermaidCode = mermaidMatch[1].trim();
-          html += `<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[${mermaidCode}]]></ac:plain-text-body></ac:structured-macro>\n`;
+          try {
+            const svg = await renderMermaidToSvg(mermaidCode, `confluence-${diagramIdx++}`);
+            html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[<div style="display:flex;justify-content:center;padding:16px">${svg}</div>]]></ac:plain-text-body></ac:structured-macro>\n`;
+          } catch {
+            // Fallback: show as mermaid code block
+            html += `<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[${mermaidCode}]]></ac:plain-text-body></ac:structured-macro>\n`;
+          }
           lastIdx = mermaidMatch.index + mermaidMatch[0].length;
         }
 

@@ -239,11 +239,14 @@ describe("Confluence Export", () => {
     expect(html).toContain("Architecture");
   });
 
-  it("should wrap mermaid blocks with language tag", async () => {
+  it("should render mermaid blocks as inline SVGs", async () => {
     const html = await exportToConfluence(projectId);
 
-    expect(html).toContain('ac:name="language">mermaid');
-    expect(html).toContain("graph TD");
+    // Should contain rendered SVG inside an HTML macro
+    expect(html).toContain('ac:name="html"');
+    expect(html).toContain("<svg");
+    // Raw mermaid source should not appear
+    expect(html).not.toContain("graph TD");
   });
 
   it("should include comments as a table", async () => {
