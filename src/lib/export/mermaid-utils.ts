@@ -24,14 +24,15 @@ function ensureMermaidDom(): JSDOM {
   dom.window.document.createElementNS = function (ns: string, tag: string) {
     const el = origCreateElementNS(ns, tag);
     if (ns === "http://www.w3.org/2000/svg") {
+      const svgEl = el as unknown as Record<string, unknown>;
       const bbox = { x: 0, y: 0, width: 100, height: 100 };
-      if (!el.getBBox) el.getBBox = () => bbox;
-      if (!el.getTotalLength) el.getTotalLength = () => 100;
-      if (!el.getPointAtLength) el.getPointAtLength = () => ({ x: 0, y: 0 });
-      if (!el.getComputedTextLength) el.getComputedTextLength = () => 50;
-      if (!el.getSubStringLength) el.getSubStringLength = () => 50;
-      if (!el.getBoundingClientRect)
-        el.getBoundingClientRect = () => ({
+      if (!svgEl.getBBox) svgEl.getBBox = () => bbox;
+      if (!svgEl.getTotalLength) svgEl.getTotalLength = () => 100;
+      if (!svgEl.getPointAtLength) svgEl.getPointAtLength = () => ({ x: 0, y: 0 });
+      if (!svgEl.getComputedTextLength) svgEl.getComputedTextLength = () => 50;
+      if (!svgEl.getSubStringLength) svgEl.getSubStringLength = () => 50;
+      if (!svgEl.getBoundingClientRect)
+        svgEl.getBoundingClientRect = () => ({
           x: 0, y: 0, width: 100, height: 100,
           top: 0, left: 0, bottom: 100, right: 100,
         });
