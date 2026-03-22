@@ -42,26 +42,22 @@ export async function exportToHtml(projectId: string): Promise<Buffer> {
     if (hasMermaid) break;
   }
 
-  // Load mermaid JS from node_modules if needed (bundled inline, no external calls)
+  // Load mermaid JS for rendering diagrams
   let mermaidScript = "";
   if (hasMermaid) {
+    // Read the installed mermaid version for the CDN URL
+    let mermaidVersion = "11";
     try {
-      const mermaidPath = path.join(process.cwd(), "node_modules", "mermaid", "dist", "mermaid.min.js");
-      const mermaidJs = await readFile(mermaidPath, "utf-8");
-      mermaidScript = `<script>${mermaidJs}</script>
-<script>mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>`;
+      const pkgPath = path.join(process.cwd(), "node_modules", "mermaid", "package.json");
+      const pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
+      mermaidVersion = pkg.version || mermaidVersion;
     } catch {
-      // Fallback: try the ESM bundle
-      try {
-        const mermaidPath = path.join(process.cwd(), "node_modules", "mermaid", "dist", "mermaid.core.mjs");
-        const mermaidJs = await readFile(mermaidPath, "utf-8");
-        mermaidScript = `<script type="module">${mermaidJs}
-mermaid.initialize({ startOnLoad: true, theme: 'default' });</script>`;
-      } catch {
-        // If we can't load mermaid, diagrams will show as code
-        mermaidScript = "";
-      }
+      // Fall back to major version
     }
+    mermaidScript = `<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@${mermaidVersion}/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad: true, theme: 'default' });
+</script>`;
   }
 
   let html = `<!DOCTYPE html>

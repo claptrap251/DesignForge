@@ -7,6 +7,7 @@ import {
   createTestMarkdownDesign,
 } from "./helpers";
 import { exportToMarkdown } from "@/lib/export/markdown";
+import { exportToHtml } from "@/lib/export/html";
 import { exportToConfluence } from "@/lib/export/confluence";
 import {
   markdownToHtmlWithMermaid,
@@ -129,6 +130,86 @@ describe("Markdown Export", () => {
   it("should return fallback for nonexistent project", async () => {
     const md = await exportToMarkdown("nonexistent-id");
     expect(md).toContain("not found");
+  });
+});
+
+describe("HTML Export", () => {
+  let projectId: string;
+
+  beforeEach(async () => {
+    await cleanDb();
+    const project = await createTestProject();
+    projectId = project.id;
+    const folder = await createTestFolder(project.id, "Screens");
+    const design = await createTestMarkdownDesign(
+      folder.id,
+      "# Design Review Flow\n\n```mermaid\nflowchart TD\n    A[Designer uploads design] --> B[Team notified]\n    B --> C{Review started}\n```\n\n## Goals\n\n- Increase CTA rate"
+    );
+
+    await prisma.comment.create({
+      data: {
+        designId: design.id,
+        xPercent: 25.6,
+        yPercent: 51.0,
+        pinNumber: 1,
+        content: "Needs update",
+        authorName: "Aayush",
+      },
+    });
+  });
+
+  it("should include mermaid CDN script (not inline bundle)", async () => {
+    const buf = await exportToHtml(projectId);
+    const html = buf.toString("utf-8");
+
+    // Should use CDN import, not an inline bundle
+    expect(html).toContain("cdn.jsdelivr.net/npm/mermaid");
+    expect(html).toContain("import mermaid from");
+    expect(html).toContain('type="module"');
+  });
+
+  it("should render mermaid blocks as unescaped div.mermaid elements", async () => {
+    const buf = await exportToHtml(projectId);
+    const html = buf.toString("utf-8");
+
+    // Mermaid diagram should be in a div.mermaid, NOT escaped
+    expect(html).toContain('<div class="mermaid">flowchart TD');
+    expect(html).toContain("A[Designer uploads design] --> B[Team notified]");
+    // Arrows should NOT be HTML-escaped inside mermaid divs
+    expect(html).not.toMatch(/<div class="mermaid">[\s\S]*?--&gt;/);
+  });
+
+  it("should escape non-mermaid content properly", async () => {
+    const buf = await exportToHtml(projectId);
+    const html = buf.toString("utf-8");
+
+    expect(html).toContain("Goals");
+    expect(html).toContain("Increase CTA rate");
+  });
+
+  it("should include comments in HTML export", async () => {
+    const buf = await exportToHtml(projectId);
+    const html = buf.toString("utf-8");
+
+    expect(html).toContain("Needs update");
+    expect(html).toContain("Aayush");
+    expect(html).toContain("25.6%");
+    expect(html).toContain("51.0%");
+  });
+
+  it("should not include mermaid script when no mermaid content", async () => {
+    await cleanDb();
+    const project = await createTestProject();
+    const folder = await createTestFolder(project.id, "Plain");
+    await createTestMarkdownDesign(folder.id, "# No diagrams here");
+
+    const buf = await exportToHtml(project.id);
+    const html = buf.toString("utf-8");
+
+    expect(html).not.toContain("cdn.jsdelivr.net");
+    expect(html).not.toContain('<div class="mermaid">');
+    expect(html).not.toContain("import mermaid from");
+    expect(html).toContain("No diagrams here");
   });
 });
 
