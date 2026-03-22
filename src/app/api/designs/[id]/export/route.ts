@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { exportDesignToMarkdown } from "@/lib/export/markdown";
 import { exportDesignToHtml } from "@/lib/export/html";
+import { exportDesignToDocx } from "@/lib/export/docx";
 import { exportDesignToConfluence } from "@/lib/export/confluence";
 
 export async function GET(
@@ -16,7 +18,7 @@ export async function GET(
 
   const design = await prisma.design.findUnique({
     where: { id },
-    select: { id: true, name: true, content: true, type: true },
+    select: { id: true, name: true },
   });
 
   if (!design) {
@@ -28,7 +30,8 @@ export async function GET(
 
   switch (format) {
     case "md": {
-      return new NextResponse(design.content || "", {
+      const markdown = await exportDesignToMarkdown(id);
+      return new NextResponse(markdown, {
         headers: {
           "Content-Type": "text/markdown",
           "Content-Disposition": `attachment; filename="${safeName}.md"`,
@@ -46,6 +49,17 @@ export async function GET(
       });
     }
 
+    case "docx": {
+      const docxBuffer = await exportDesignToDocx(id);
+      return new NextResponse(new Uint8Array(docxBuffer), {
+        headers: {
+          "Content-Type":
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "Content-Disposition": `attachment; filename="${safeName}.docx"`,
+        },
+      });
+    }
+
     case "confluence": {
       const confluenceHtml = await exportDesignToConfluence(id);
       return new NextResponse(confluenceHtml, {
@@ -58,7 +72,7 @@ export async function GET(
 
     default:
       return NextResponse.json(
-        { error: "Unsupported format. Use: md, html, confluence" },
+        { error: "Unsupported format. Use: md, html, docx, confluence" },
         { status: 400 }
       );
   }

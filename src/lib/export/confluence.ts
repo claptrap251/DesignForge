@@ -19,8 +19,12 @@ async function renderDesignContentConfluence(
       html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${before}]]></ac:plain-text-body></ac:structured-macro>\n`;
     }
     const mermaidCode = mermaidMatch[1].trim();
-    const svg = await renderMermaidToSvg(mermaidCode, `${prefix}-${diagramIdx++}`);
-    html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[<div style="display:flex;justify-content:center;padding:16px">${svg}</div>]]></ac:plain-text-body></ac:structured-macro>\n`;
+    try {
+      const svg = await renderMermaidToSvg(mermaidCode, `${prefix}-${diagramIdx++}`);
+      html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[<div style="display:flex;justify-content:center;padding:16px">${svg}</div>]]></ac:plain-text-body></ac:structured-macro>\n`;
+    } catch {
+      html += `<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[${mermaidCode}]]></ac:plain-text-body></ac:structured-macro>\n`;
+    }
     lastIdx = mermaidMatch.index + mermaidMatch[0].length;
   }
 

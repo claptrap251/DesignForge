@@ -55,38 +55,26 @@ export default function DesignViewerPage() {
     }
   }, [showExportMenu]);
 
-  const handleExportDesign = async (format: "md" | "html" | "confluence") => {
+  const handleExportDesign = async (format: "md" | "html" | "docx" | "confluence") => {
     setExporting(true);
     setShowExportMenu(false);
 
     try {
-      if (format === "md") {
-        // Direct markdown download from current/viewed content
-        const content =
-          viewingVersion && viewingVersion.version !== design?.currentVersion
-            ? viewingVersion.content || ""
-            : design?.content || "";
-        const blob = new Blob([content], { type: "text/markdown" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${design?.name || "design"}.md`;
-        a.click();
-        URL.revokeObjectURL(url);
-      } else {
-        // Server-side export for HTML/Confluence
-        const res = await fetch(`/api/designs/${designId}/export?format=${format}`);
-        if (!res.ok) throw new Error("Export failed");
-        const blob = await res.blob();
-        const ext = format === "confluence" ? "html" : format;
-        const suffix = format === "confluence" ? "-confluence" : "";
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${design?.name || "design"}${suffix}.${ext}`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
+      const res = await fetch(`/api/designs/${designId}/export?format=${format}`);
+      if (!res.ok) throw new Error("Export failed");
+      const blob = await res.blob();
+
+      const extMap: Record<string, string> = { md: "md", html: "html", docx: "docx", confluence: "html" };
+      const suffixMap: Record<string, string> = { confluence: "-confluence" };
+      const ext = extMap[format] || format;
+      const suffix = suffixMap[format] || "";
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${design?.name || "design"}${suffix}.${ext}`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed:", err);
     } finally {
@@ -229,6 +217,13 @@ export default function DesignViewerPage() {
                 >
                   <span className="w-5 text-center text-xs font-bold text-gray-400">{"<>"}</span>
                   HTML
+                </button>
+                <button
+                  onClick={() => handleExportDesign("docx")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <span className="w-5 text-center text-xs font-bold text-blue-400">W</span>
+                  Word
                 </button>
                 <button
                   onClick={() => handleExportDesign("confluence")}

@@ -6,10 +6,10 @@ import {
   createTestFolder,
   createTestMarkdownDesign,
 } from "./helpers";
-import { exportToMarkdown } from "@/lib/export/markdown";
+import { exportToMarkdown, exportDesignToMarkdown } from "@/lib/export/markdown";
 import { exportToHtml, exportDesignToHtml } from "@/lib/export/html";
 import { exportToConfluence, exportDesignToConfluence } from "@/lib/export/confluence";
-import { exportToDocx } from "@/lib/export/docx";
+import { exportToDocx, exportDesignToDocx } from "@/lib/export/docx";
 import {
   renderMermaidToSvg,
   renderMermaidToPng,
@@ -349,8 +349,9 @@ ${DIAGRAM_FLOWCHART}
 
 Some trailing text`;
 
-    const html = await markdownToHtmlWithMermaidSvg(md);
+    const { html, needsFallback } = await markdownToHtmlWithMermaidSvg(md);
 
+    expect(needsFallback).toBe(false);
     expect(html).toContain("<svg");
     expect(html).toContain("</svg>");
     // Raw mermaid code should not appear
@@ -375,8 +376,9 @@ ${DIAGRAM_SEQUENCE}
 
 Text after`;
 
-    const html = await markdownToHtmlWithMermaidSvg(md);
+    const { html, needsFallback } = await markdownToHtmlWithMermaidSvg(md);
 
+    expect(needsFallback).toBe(false);
     // Should contain two SVGs
     const svgCount = (html.match(/<svg/g) || []).length;
     expect(svgCount).toBe(2);
@@ -502,5 +504,29 @@ ${DIAGRAM_GANTT}
     expect(md).toContain("flowchart TD");
     expect(md).toContain("sequenceDiagram");
     expect(md).toContain("gantt");
+  });
+
+  it("single design DOCX export should succeed", async () => {
+    const buf = await exportDesignToDocx(designId);
+
+    expect(buf).toBeInstanceOf(Buffer);
+    expect(buf.length).toBeGreaterThan(0);
+    expect(buf[0]).toBe(0x50); // P
+    expect(buf[1]).toBe(0x4b); // K
+  });
+
+  it("single design MD export should include comments", async () => {
+    const md = await exportDesignToMarkdown(designId);
+
+    // Should contain design content with mermaid blocks preserved
+    expect(md).toContain("```mermaid");
+    expect(md).toContain("flowchart TD");
+
+    // Should include comments matching project export format
+    expect(md).toContain("Pin #1");
+    expect(md).toContain("Reviewer");
+    expect(md).toContain("Looks good");
+    expect(md).toContain("10.0%");
+    expect(md).toContain("20.0%");
   });
 });

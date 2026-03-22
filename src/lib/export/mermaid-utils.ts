@@ -195,12 +195,20 @@ export async function renderMermaidToPng(code: string, id: string): Promise<Buff
   return Buffer.from(pngBuffer);
 }
 
-/** Convert markdown with mermaid blocks to HTML with pre-rendered SVGs */
-export async function markdownToHtmlWithMermaidSvg(content: string): Promise<string> {
+/**
+ * Convert markdown with mermaid blocks to HTML with pre-rendered SVGs.
+ * Returns { html, needsFallback } — if any diagram fails server-side rendering,
+ * it is left as a raw <pre class="mermaid"> block for client-side CDN rendering
+ * and needsFallback is set to true.
+ */
+export async function markdownToHtmlWithMermaidSvg(
+  content: string
+): Promise<{ html: string; needsFallback: boolean }> {
   const mermaidBlockRegex = /```mermaid\s*\n([\s\S]*?)```/g;
   let result = "";
   let lastIndex = 0;
   let diagramIndex = 0;
+  let needsFallback = false;
 
   let match;
   while ((match = mermaidBlockRegex.exec(content)) !== null) {
@@ -210,8 +218,14 @@ export async function markdownToHtmlWithMermaidSvg(content: string): Promise<str
     }
 
     const mermaidCode = match[1].trim();
-    const svg = await renderMermaidToSvg(mermaidCode, `diagram-${diagramIndex++}`);
-    result += `<div class="mermaid">${svg}</div>`;
+    try {
+      const svg = await renderMermaidToSvg(mermaidCode, `diagram-${diagramIndex++}`);
+      result += `<div class="mermaid">${svg}</div>`;
+    } catch (err) {
+      console.error("Mermaid server-side render failed:", err);
+      result += `<pre class="mermaid">${mermaidCode}</pre>`;
+      needsFallback = true;
+    }
 
     lastIndex = match.index + match[0].length;
   }
@@ -221,7 +235,7 @@ export async function markdownToHtmlWithMermaidSvg(content: string): Promise<str
     result += `<div class="markdown-text"><pre>${esc(remaining)}</pre></div>`;
   }
 
-  return result;
+  return { html: result, needsFallback };
 }
 
 /** Extract mermaid blocks from markdown, return HTML with raw mermaid divs (client-side rendering) */

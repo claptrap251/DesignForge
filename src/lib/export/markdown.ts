@@ -64,3 +64,47 @@ export async function exportToMarkdown(projectId: string): Promise<string> {
 
   return md;
 }
+
+/** Export a single design as markdown (with comments) */
+export async function exportDesignToMarkdown(designId: string): Promise<string> {
+  const design = await prisma.design.findUnique({
+    where: { id: designId },
+    include: {
+      comments: {
+        orderBy: { pinNumber: "asc" },
+        include: {
+          replies: { orderBy: { createdAt: "asc" } },
+        },
+      },
+    },
+  });
+
+  if (!design) return "# Design not found";
+
+  let md = `# ${design.name}\n\n`;
+
+  if (design.type === "IMAGE" && design.filePath) {
+    md += `![${design.name}](${design.filePath})\n\n`;
+  } else if (design.type === "MARKDOWN" && design.content) {
+    md += `${design.content}\n\n`;
+  }
+
+  if (design.comments.length > 0) {
+    md += `## Comments\n\n`;
+    for (const comment of design.comments) {
+      const status = comment.resolved ? "RESOLVED" : "OPEN";
+      md += `> **[Pin #${comment.pinNumber}]** (${status}) at position (${comment.xPercent.toFixed(1)}%, ${comment.yPercent.toFixed(1)}%)\n`;
+      md += `> **${comment.authorName}** — ${new Date(comment.createdAt).toLocaleDateString()}\n`;
+      md += `> ${comment.content}\n`;
+
+      for (const reply of comment.replies) {
+        md += `>> **${reply.authorName}** — ${new Date(reply.createdAt).toLocaleDateString()}\n`;
+        md += `>> ${reply.content}\n`;
+      }
+
+      md += `\n`;
+    }
+  }
+
+  return md;
+}

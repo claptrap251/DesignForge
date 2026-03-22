@@ -25,7 +25,14 @@ const HTML_STYLES = `
   @media print { .mermaid svg { max-width: 100%; } }
 `;
 
-function buildHtmlDocument(bodyContent: string): Buffer {
+// Mermaid CDN script — only included when server-side SVG rendering fails
+const MERMAID_SCRIPT = `
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'default' });
+</script>`;
+
+function buildHtmlDocument(bodyContent: string, includeMermaidCdn: boolean): Buffer {
   let html = `<!DOCTYPE html>
 <html>
 <head>
@@ -35,6 +42,9 @@ function buildHtmlDocument(bodyContent: string): Buffer {
 <body>`;
 
   html += bodyContent;
+  if (includeMermaidCdn) {
+    html += MERMAID_SCRIPT;
+  }
   html += `</body></html>`;
   return Buffer.from(html, "utf-8");
 }
@@ -65,12 +75,12 @@ function renderCommentsHtml(comments: any[]): string {
   return html;
 }
 
-async function renderDesignContentHtml(content: string): Promise<string> {
-  if (containsMermaid(content)) {
-    const rendered = await markdownToHtmlWithMermaidSvg(content);
-    return `<div class="markdown-content">${rendered}</div>`;
+async function renderDesignContentHtml(content: string): Promise<{ html: string; needsFallback: boolean }> {
+  if (!containsMermaid(content)) {
+    return { html: `<div class="markdown-content"><pre>${esc(content)}</pre></div>`, needsFallback: false };
   }
-  return `<div class="markdown-content"><pre>${esc(content)}</pre></div>`;
+  const { html: rendered, needsFallback } = await markdownToHtmlWithMermaidSvg(content);
+  return { html: `<div class="markdown-content">${rendered}</div>`, needsFallback };
 }
 
 export async function exportToHtml(projectId: string): Promise<Buffer> {
@@ -105,6 +115,8 @@ export async function exportToHtml(projectId: string): Promise<Buffer> {
     body += `<p>${esc(project.description)}</p>`;
   }
 
+  let needsFallback = false;
+
   for (const folder of project.folders) {
     body += `<h2>${esc(folder.name)}</h2>`;
 
@@ -112,14 +124,16 @@ export async function exportToHtml(projectId: string): Promise<Buffer> {
       body += `<h3>${esc(design.name)} <span class="meta">(${design.type})</span></h3>`;
 
       if (design.type === "MARKDOWN" && design.content) {
-        body += await renderDesignContentHtml(design.content);
+        const result = await renderDesignContentHtml(design.content);
+        body += result.html;
+        if (result.needsFallback) needsFallback = true;
       }
 
       body += renderCommentsHtml(design.comments);
     }
   }
 
-  return buildHtmlDocument(body);
+  return buildHtmlDocument(body, needsFallback);
 }
 
 /** Export a single design as HTML */
@@ -141,14 +155,17 @@ export async function exportDesignToHtml(designId: string): Promise<Buffer> {
   }
 
   let body = `<h1>${esc(design.name)} <span class="meta">(${design.type})</span></h1>`;
+  let needsFallback = false;
 
   if (design.type === "MARKDOWN" && design.content) {
-    body += await renderDesignContentHtml(design.content);
+    const result = await renderDesignContentHtml(design.content);
+    body += result.html;
+    needsFallback = result.needsFallback;
   }
 
   body += renderCommentsHtml(design.comments);
 
-  return buildHtmlDocument(body);
+  return buildHtmlDocument(body, needsFallback);
 }
 
 function esc(str: string): string {
