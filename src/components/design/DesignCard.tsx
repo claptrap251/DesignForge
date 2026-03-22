@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 
 interface DesignCardProps {
   design: {
@@ -11,9 +14,12 @@ interface DesignCardProps {
   };
   projectId: string;
   shareToken?: string;
+  onDelete?: (designId: string) => void;
 }
 
-export default function DesignCard({ design, projectId, shareToken }: DesignCardProps) {
+export default function DesignCard({ design, projectId, shareToken, onDelete }: DesignCardProps) {
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const isImage = design.type === "image";
   const commentCount = design.comments?.length ?? 0;
   const createdDate = new Date(design.createdAt).toLocaleDateString("en-US", {
@@ -25,10 +31,37 @@ export default function DesignCard({ design, projectId, shareToken }: DesignCard
     ? `/share/${shareToken}/design/${design.id}`
     : `/project/${projectId}/design/${design.id}`;
 
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!confirming) {
+      setConfirming(true);
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/designs/${design.id}`, { method: "DELETE" });
+      if (res.ok) {
+        onDelete?.(design.id);
+      }
+    } catch {
+      setDeleting(false);
+      setConfirming(false);
+    }
+  };
+
+  const cancelDelete = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setConfirming(false);
+  };
+
   return (
     <Link
       href={href}
-      className="group block overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:border-indigo-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+      className="group relative block overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm transition-all hover:border-indigo-300 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
     >
       <div className="flex h-40 items-center justify-center bg-gray-50">
         {isImage && design.filePath ? (
@@ -69,6 +102,39 @@ export default function DesignCard({ design, projectId, shareToken }: DesignCard
           <span>{createdDate}</span>
         </div>
       </div>
+
+      {/* Delete button - only for authenticated views */}
+      {!shareToken && onDelete && (
+        <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+          {confirming ? (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-red-700 disabled:opacity-50"
+              >
+                {deleting ? "..." : "Delete"}
+              </button>
+              <button
+                onClick={cancelDelete}
+                className="rounded-md bg-white px-2 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleDelete}
+              className="rounded-md bg-white/90 p-1.5 text-gray-400 shadow-sm backdrop-blur-sm hover:bg-red-50 hover:text-red-600"
+              title="Delete design"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+            </button>
+          )}
+        </div>
+      )}
     </Link>
   );
 }

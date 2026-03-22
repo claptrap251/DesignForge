@@ -144,6 +144,7 @@ export default function ProjectPage() {
               folderId={activeFolder}
               onUpload={() => setShowUpload(true)}
               projectId={projectId}
+              onDeleteDesign={() => fetchProject()}
             />
           ) : (
             <div className="text-center py-20 text-gray-500">

@@ -6,9 +6,10 @@ interface DesignGridProps {
   onUpload: () => void;
   projectId?: string;
   shareToken?: string;
+  onDeleteDesign?: (designId: string) => void;
 }
 
-export default function DesignGrid({ designs, folderId, onUpload, projectId, shareToken }: DesignGridProps) {
+export default function DesignGrid({ designs, folderId, onUpload, projectId, shareToken, onDeleteDesign }: DesignGridProps) {
   if (designs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 py-16">
@@ -55,7 +56,7 @@ export default function DesignGrid({ designs, folderId, onUpload, projectId, sha
       </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {designs.map((design) => (
-          <DesignCard key={design.id} design={design} projectId={projectId || folderId} shareToken={shareToken} />
+          <DesignCard key={design.id} design={design} projectId={projectId || folderId} shareToken={shareToken} onDelete={onDeleteDesign} />
         ))}
       </div>
     </div>
