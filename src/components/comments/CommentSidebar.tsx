@@ -9,6 +9,8 @@ interface CommentSidebarProps {
   onReply: (commentId: string, content: string, authorName: string) => void;
   selectedCommentId: string | null;
   onSelectComment: (id: string) => void;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 type FilterType = "all" | "unresolved" | "resolved";
@@ -19,6 +21,8 @@ export default function CommentSidebar({
   onReply,
   selectedCommentId,
   onSelectComment,
+  mobileOpen,
+  onMobileClose,
 }: CommentSidebarProps) {
   const [filter, setFilter] = useState<FilterType>("all");
 
@@ -32,14 +36,26 @@ export default function CommentSidebar({
 
   const unresolvedCount = comments.filter((c) => !c.resolved).length;
 
-  return (
-    <aside className="flex h-full w-80 flex-col border-l border-gray-200 bg-gray-50">
+  const sidebarInner = (
+    <>
       <div className="border-b border-gray-200 bg-white px-4 py-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold text-gray-900">Comments</h3>
-          <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
-            {unresolvedCount} open
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+              {unresolvedCount} open
+            </span>
+            {onMobileClose && (
+              <button
+                onClick={onMobileClose}
+                className="lg:hidden rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
         </div>
         <div className="mt-2 flex gap-1 rounded-lg bg-gray-100 p-0.5">
           {(["all", "unresolved", "resolved"] as FilterType[]).map((f) => (
@@ -93,6 +109,25 @@ export default function CommentSidebar({
           </div>
         )}
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex h-full w-80 flex-col border-l border-gray-200 bg-gray-50">
+        {sidebarInner}
+      </aside>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-40">
+          <div className="fixed inset-0 bg-black/50" onClick={onMobileClose} />
+          <aside className="absolute right-0 top-0 z-10 flex h-full w-full sm:w-80 flex-col bg-gray-50 shadow-xl">
+            {sidebarInner}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

@@ -22,8 +22,9 @@ async function renderDesignContentConfluence(
     try {
       const svg = await renderMermaidToSvg(mermaidCode, `${prefix}-${diagramIdx++}`);
       html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[<div style="display:flex;justify-content:center;padding:16px">${svg}</div>]]></ac:plain-text-body></ac:structured-macro>\n`;
-    } catch {
-      html += `<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:plain-text-body><![CDATA[${mermaidCode}]]></ac:plain-text-body></ac:structured-macro>\n`;
+    } catch (err) {
+      console.error(`Mermaid render failed for confluence diagram ${prefix}-${diagramIdx - 1}:`, err);
+      html += `<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:parameter ac:name="title">Diagram (render failed)</ac:parameter><ac:plain-text-body><![CDATA[${mermaidCode}]]></ac:plain-text-body></ac:structured-macro>\n`;
     }
     lastIdx = mermaidMatch.index + mermaidMatch[0].length;
   }

@@ -13,6 +13,8 @@ export default function ImageViewer({ src, children }: ImageViewerProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const lastTouchDist = useRef<number | null>(null);
+  const lastTouchCenter = useRef<{ x: number; y: number } | null>(null);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -44,6 +46,57 @@ export default function ImageViewer({ src, children }: ImageViewerProps) {
     setIsDragging(false);
   }, []);
 
+  // Touch handlers for pinch-to-zoom and pan
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        lastTouchDist.current = Math.hypot(dx, dy);
+        lastTouchCenter.current = {
+          x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
+          y: (e.touches[0].clientY + e.touches[1].clientY) / 2,
+        };
+      } else if (e.touches.length === 1) {
+        setIsDragging(true);
+        setDragStart({
+          x: e.touches[0].clientX - position.x,
+          y: e.touches[0].clientY - position.y,
+        });
+      }
+    },
+    [position]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+
+        if (lastTouchDist.current !== null) {
+          const scaleDelta = dist / lastTouchDist.current;
+          setScale((prev) => Math.min(Math.max(prev * scaleDelta, 0.1), 5));
+        }
+        lastTouchDist.current = dist;
+      } else if (e.touches.length === 1 && isDragging) {
+        setPosition({
+          x: e.touches[0].clientX - dragStart.x,
+          y: e.touches[0].clientY - dragStart.y,
+        });
+      }
+    },
+    [isDragging, dragStart]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+    lastTouchDist.current = null;
+    lastTouchCenter.current = null;
+  }, []);
+
   useEffect(() => {
     const handleGlobalMouseUp = () => setIsDragging(false);
     window.addEventListener("mouseup", handleGlobalMouseUp);
@@ -58,11 +111,14 @@ export default function ImageViewer({ src, children }: ImageViewerProps) {
   return (
     <div className="relative h-full w-full overflow-hidden bg-gray-100" ref={containerRef}>
       <div
-        className="h-full w-full"
+        className="h-full w-full touch-none"
         onWheel={handleWheel}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
         style={{ cursor: isDragging ? "grabbing" : "grab" }}
       >
         <div
@@ -87,10 +143,10 @@ export default function ImageViewer({ src, children }: ImageViewerProps) {
         </div>
       </div>
 
-      <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-white/90 px-3 py-2 shadow-md backdrop-blur-sm">
+      <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-white/90 px-2 sm:px-3 py-1.5 sm:py-2 shadow-md backdrop-blur-sm">
         <button
           onClick={() => setScale((s) => Math.max(s - 0.25, 0.1))}
-          className="rounded p-1 text-gray-600 hover:bg-gray-100"
+          className="rounded p-2 text-gray-600 hover:bg-gray-100 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 flex items-center justify-center"
           title="Zoom out"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -102,7 +158,7 @@ export default function ImageViewer({ src, children }: ImageViewerProps) {
         </span>
         <button
           onClick={() => setScale((s) => Math.min(s + 0.25, 5))}
-          className="rounded p-1 text-gray-600 hover:bg-gray-100"
+          className="rounded p-2 text-gray-600 hover:bg-gray-100 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 flex items-center justify-center"
           title="Zoom in"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -112,7 +168,7 @@ export default function ImageViewer({ src, children }: ImageViewerProps) {
         <div className="mx-1 h-4 w-px bg-gray-300" />
         <button
           onClick={resetView}
-          className="rounded p-1 text-gray-600 hover:bg-gray-100"
+          className="rounded p-2 text-gray-600 hover:bg-gray-100 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 flex items-center justify-center"
           title="Reset view"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

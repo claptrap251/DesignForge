@@ -21,6 +21,7 @@ export default function ProjectPage() {
   const [showShare, setShowShare] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fetchProject = useCallback(async () => {
     const res = await fetch(`/api/projects/${projectId}`);
@@ -92,18 +93,32 @@ export default function ProjectPage() {
           onCreateFolder={handleCreateFolder}
           onDeleteFolder={handleDeleteFolder}
           projectName={project.name}
+          mobileOpen={sidebarOpen}
+          onMobileClose={() => setSidebarOpen(false)}
         />
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {activeFolderData?.name || "Select a folder"}
-              </h2>
-              <p className="text-sm text-gray-500">
-                {activeFolderData?.designs?.length || 0} designs
-              </p>
+        <main className="flex-1 p-4 sm:p-6 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div className="flex items-center gap-3">
+              {/* Mobile sidebar toggle */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden rounded-lg border border-gray-300 p-2 text-gray-600 hover:bg-gray-50"
+                aria-label="Open folders"
+              >
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+              </button>
+              <div>
+                <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                  {activeFolderData?.name || "Select a folder"}
+                </h2>
+                <p className="text-sm text-gray-500">
+                  {activeFolderData?.designs?.length || 0} designs
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -113,7 +128,7 @@ export default function ProjectPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                 </svg>
-                Share
+                <span className="hidden sm:inline">Share</span>
               </button>
               <button
                 onClick={() => setShowExport(true)}
@@ -122,7 +137,7 @@ export default function ProjectPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Export
+                <span className="hidden sm:inline">Export</span>
               </button>
               {activeFolder && (
                 <button
@@ -132,7 +147,7 @@ export default function ProjectPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
-                  Upload
+                  <span className="hidden sm:inline">Upload</span>
                 </button>
               )}
             </div>

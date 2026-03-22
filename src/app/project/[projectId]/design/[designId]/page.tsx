@@ -26,6 +26,7 @@ export default function DesignViewerPage() {
   const [loading, setLoading] = useState(true);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [commentSidebarOpen, setCommentSidebarOpen] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
 
   const fetchDesign = useCallback(async () => {
@@ -157,8 +158,8 @@ export default function DesignViewerPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
-          <h2 className="font-medium text-gray-900">{design.name}</h2>
-          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+          <h2 className="font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">{design.name}</h2>
+          <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded hidden sm:inline">
             {design.type}
           </span>
         </div>
@@ -166,12 +167,12 @@ export default function DesignViewerPage() {
           {viewingVersion && viewingVersion.version !== design.currentVersion && (
             <button
               onClick={() => setViewingVersion(null)}
-              className="flex items-center gap-1 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-200"
+              className="flex items-center gap-1 rounded-lg bg-amber-100 px-2 sm:px-3 py-1.5 text-sm font-medium text-amber-800 hover:bg-amber-200"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
-              Back to current (v{design.currentVersion})
+              <span className="hidden sm:inline">Back to current (v{design.currentVersion})</span>
             </button>
           )}
           <VersionHistory
@@ -195,8 +196,8 @@ export default function DesignViewerPage() {
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              {exporting ? "Exporting..." : "Export"}
-              <svg className="h-3 w-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="hidden sm:inline">{exporting ? "Exporting..." : "Export"}</span>
+              <svg className="h-3 w-3 ml-0.5 hidden sm:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
@@ -242,11 +243,11 @@ export default function DesignViewerPage() {
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
-            New Version
+            <span className="hidden sm:inline">New Version</span>
           </button>
           <button
             onClick={() => setIsAddMode(!isAddMode)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1 ${
+            className={`px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1 ${
               isAddMode
                 ? "bg-red-100 text-red-700 hover:bg-red-200"
                 : "bg-indigo-600 text-white hover:bg-indigo-700"
@@ -257,16 +258,27 @@ export default function DesignViewerPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                Cancel
+                <span className="hidden sm:inline">Cancel</span>
               </>
             ) : (
               <>
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Add Comment
+                <span className="hidden sm:inline">Add Comment</span>
               </>
             )}
+          </button>
+          {/* Mobile comments toggle */}
+          <button
+            onClick={() => setCommentSidebarOpen(true)}
+            className="lg:hidden flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            aria-label="Show comments"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+            </svg>
+            <span className="text-xs font-medium">{design.comments?.length || 0}</span>
           </button>
         </div>
       </div>
@@ -327,6 +339,8 @@ export default function DesignViewerPage() {
           onReply={handleReply}
           selectedCommentId={selectedCommentId}
           onSelectComment={setSelectedCommentId}
+          mobileOpen={commentSidebarOpen}
+          onMobileClose={() => setCommentSidebarOpen(false)}
         />
       </div>
 

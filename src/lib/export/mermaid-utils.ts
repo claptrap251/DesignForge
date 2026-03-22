@@ -142,27 +142,40 @@ function ensureDomGlobals(dom: JSDOM): void {
   domGlobalsSet = true;
 }
 
+// Promise-based mutex to serialize renders — mermaid mutates global DOM
+// state, and `await render()` yields, so concurrent requests can interleave.
+let renderLock: Promise<void> = Promise.resolve();
+
 /** Render mermaid code to SVG server-side using jsdom */
 export async function renderMermaidToSvg(code: string, id: string): Promise<string> {
-  const dom = ensureMermaidDom();
+  let release!: () => void;
+  const prevLock = renderLock;
+  renderLock = new Promise<void>((resolve) => { release = resolve; });
+  await prevLock;
 
-  // Mermaid is a singleton that caches DOM globals (window, document, etc.)
-  // at import time.  Restoring globals between renders breaks subsequent
-  // calls, so we set them once and leave them in place.
-  ensureDomGlobals(dom);
+  try {
+    const dom = ensureMermaidDom();
 
-  if (!mermaidInstance) {
-    mermaidInstance = (await import("mermaid")).default;
+    // Mermaid is a singleton that caches DOM globals (window, document, etc.)
+    // at import time.  Restoring globals between renders breaks subsequent
+    // calls, so we set them once and leave them in place.
+    ensureDomGlobals(dom);
+
+    if (!mermaidInstance) {
+      mermaidInstance = (await import("mermaid")).default;
+    }
+    mermaidInstance.initialize({ startOnLoad: false, theme: "default" });
+
+    // Use unique IDs to avoid conflicts between renders.
+    // Let mermaid manage its own DOM lifecycle — it calls
+    // removeExistingElements() internally to clean up previous renders.
+    const uniqueId = `${id}-${renderCounter++}`;
+    const { svg } = await mermaidInstance.render(uniqueId, code);
+
+    return svg;
+  } finally {
+    release();
   }
-  mermaidInstance.initialize({ startOnLoad: false, theme: "default" });
-
-  // Use unique IDs to avoid conflicts between renders.
-  // Let mermaid manage its own DOM lifecycle — it calls
-  // removeExistingElements() internally to clean up previous renders.
-  const uniqueId = `${id}-${renderCounter++}`;
-  const { svg } = await mermaidInstance.render(uniqueId, code);
-
-  return svg;
 }
 
 /** Render mermaid code to PNG buffer for embedding in docx */

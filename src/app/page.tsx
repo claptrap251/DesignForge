@@ -41,16 +41,16 @@ export default async function HomePage() {
       {/* Hero */}
       <main className="flex-1 flex items-center justify-center">
         <div className="max-w-4xl mx-auto px-4 py-20 text-center">
-          <h2 className="text-5xl font-bold text-gray-900 mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
             Design Review,{" "}
             <span className="text-indigo-600">Simplified</span>
           </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
             Upload your designs, share a link, and collect pin-based feedback from
             reviewers. Export everything to PDF, Word, Markdown, or Confluence
             with full comment history.
           </p>
-          <div className="flex justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href={session ? "/dashboard" : "/register"}
               className="bg-indigo-600 text-white px-8 py-3 rounded-lg text-lg font-medium hover:bg-indigo-700 transition shadow-lg shadow-indigo-200"
@@ -60,7 +60,7 @@ export default async function HomePage() {
           </div>
 
           {/* Features */}
-          <div className="grid md:grid-cols-3 gap-8 mt-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8 mt-12 sm:mt-20">
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
                 <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

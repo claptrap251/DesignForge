@@ -323,6 +323,23 @@ describe("Mermaid → SVG server-side rendering", () => {
 
     expect(svg1).not.toEqual(svg2);
   });
+
+  it("should handle concurrent renders without corruption", async () => {
+    const results = await Promise.all([
+      renderMermaidToSvg(DIAGRAM_FLOWCHART, "concurrent-1"),
+      renderMermaidToSvg(DIAGRAM_SEQUENCE, "concurrent-2"),
+      renderMermaidToSvg(DIAGRAM_GRAPH_LR, "concurrent-3"),
+      renderMermaidToSvg(DIAGRAM_GANTT, "concurrent-4"),
+    ]);
+
+    for (const svg of results) {
+      expect(svg).toContain("<svg");
+      expect(svg).toContain("</svg>");
+    }
+
+    const uniqueSvgs = new Set(results);
+    expect(uniqueSvgs.size).toBe(4);
+  });
 });
 
 describe("Mermaid → PNG rendering", () => {
@@ -528,5 +545,133 @@ ${DIAGRAM_GANTT}
     expect(md).toContain("Looks good");
     expect(md).toContain("10.0%");
     expect(md).toContain("20.0%");
+  });
+
+  it("single design Confluence export should include comments", async () => {
+    const html = await exportDesignToConfluence(designId);
+
+    expect(html).toContain("#1");
+    expect(html).toContain("Reviewer");
+    expect(html).toContain("Looks good");
+    expect(html).toContain('ac:name="html"');
+  });
+});
+
+describe("Single Design Exports — edge cases", () => {
+  it("single design HTML export without mermaid should have content, no SVG", async () => {
+    await cleanDb();
+    const project = await createTestProject();
+    const folder = await createTestFolder(project.id, "Plain");
+    const design = await createTestMarkdownDesign(folder.id, "# Plain Design\n\nNo diagrams here");
+
+    const buf = await exportDesignToHtml(design.id);
+    const html = buf.toString("utf-8");
+
+    expect(html).toContain("Plain Design");
+    expect(html).toContain("No diagrams here");
+    expect(html).not.toContain("<svg");
+    expect(html).not.toContain("cdn.jsdelivr.net");
+  });
+
+  it("single design MD export without comments should not have Comments heading", async () => {
+    await cleanDb();
+    const project = await createTestProject();
+    const folder = await createTestFolder(project.id, "NoComments");
+    const design = await createTestMarkdownDesign(folder.id, "# Just Content\n\nNothing to review");
+
+    const md = await exportDesignToMarkdown(design.id);
+
+    expect(md).toContain("Just Content");
+    expect(md).toContain("Nothing to review");
+    expect(md).not.toContain("## Comments");
+  });
+
+  it("single design MD export should include replies", async () => {
+    await cleanDb();
+    const project = await createTestProject();
+    const folder = await createTestFolder(project.id, "WithReplies");
+    const design = await createTestMarkdownDesign(folder.id, "# Design With Replies");
+
+    const comment = await prisma.comment.create({
+      data: {
+        designId: design.id,
+        xPercent: 30,
+        yPercent: 40,
+        pinNumber: 1,
+        content: "Needs work",
+        authorName: "Alice",
+      },
+    });
+
+    await prisma.reply.create({
+      data: {
+        commentId: comment.id,
+        content: "Fixed it",
+        authorName: "Bob",
+      },
+    });
+
+    const md = await exportDesignToMarkdown(design.id);
+
+    expect(md).toContain("Alice");
+    expect(md).toContain("Needs work");
+    expect(md).toContain("Bob");
+    expect(md).toContain("Fixed it");
+  });
+
+  it("should handle nonexistent design ID gracefully", async () => {
+    const fakeId = "nonexistent-design-id";
+
+    const htmlBuf = await exportDesignToHtml(fakeId);
+    expect(htmlBuf.toString()).toContain("not found");
+
+    const docxBuf = await exportDesignToDocx(fakeId);
+    expect(docxBuf.toString()).toContain("not found");
+
+    const md = await exportDesignToMarkdown(fakeId);
+    expect(md).toContain("not found");
+
+    const confluence = await exportDesignToConfluence(fakeId);
+    expect(confluence).toContain("not found");
+  });
+});
+
+describe("Markdown Export — resolved vs open comments", () => {
+  it("should distinguish resolved and open comments", async () => {
+    await cleanDb();
+    const project = await createTestProject();
+    const folder = await createTestFolder(project.id, "Status Test");
+    const design = await createTestMarkdownDesign(folder.id, "# Status Test");
+
+    await prisma.comment.create({
+      data: {
+        designId: design.id,
+        xPercent: 10,
+        yPercent: 10,
+        pinNumber: 1,
+        content: "This is open",
+        authorName: "Alice",
+        resolved: false,
+      },
+    });
+
+    await prisma.comment.create({
+      data: {
+        designId: design.id,
+        xPercent: 20,
+        yPercent: 20,
+        pinNumber: 2,
+        content: "This is resolved",
+        authorName: "Bob",
+        resolved: true,
+      },
+    });
+
+    const md = await exportToMarkdown(project.id);
+
+    expect(md).toContain("OPEN");
+    expect(md).toContain("RESOLVED");
+    expect(md).toContain("This is open");
+    expect(md).toContain("This is resolved");
   });
 });

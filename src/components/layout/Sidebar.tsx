@@ -9,6 +9,8 @@ interface SidebarProps {
   onCreateFolder: (name: string, parentId?: string) => void;
   onDeleteFolder: (id: string) => void;
   projectName: string;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
 }
 
 function FolderItem({
@@ -89,7 +91,7 @@ function FolderItem({
 
         <span className="truncate flex-1">{folder.name}</span>
 
-        <div className="hidden gap-0.5 group-hover:flex">
+        <div className="flex gap-0.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -186,6 +188,8 @@ export default function Sidebar({
   onCreateFolder,
   onDeleteFolder,
   projectName,
+  mobileOpen,
+  onMobileClose,
 }: SidebarProps) {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -198,10 +202,25 @@ export default function Sidebar({
     }
   };
 
-  return (
-    <aside className="flex h-full w-64 flex-col border-r border-gray-200 bg-white">
+  const handleSelectFolder = (id: string) => {
+    onSelectFolder(id);
+    onMobileClose?.();
+  };
+
+  const sidebarInner = (
+    <>
       <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
         <h2 className="truncate text-sm font-semibold text-gray-900">{projectName}</h2>
+        {onMobileClose && (
+          <button
+            onClick={onMobileClose}
+            className="lg:hidden rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
@@ -269,12 +288,31 @@ export default function Sidebar({
             folder={folder}
             level={0}
             activeFolder={activeFolder}
-            onSelectFolder={onSelectFolder}
+            onSelectFolder={handleSelectFolder}
             onCreateFolder={onCreateFolder}
             onDeleteFolder={onDeleteFolder}
           />
         ))}
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex h-full w-64 flex-col border-r border-gray-200 bg-white">
+        {sidebarInner}
+      </aside>
+
+      {/* Mobile overlay sidebar */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-40">
+          <div className="fixed inset-0 bg-black/50" onClick={onMobileClose} />
+          <aside className="relative z-10 flex h-full w-72 flex-col bg-white shadow-xl">
+            {sidebarInner}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }
