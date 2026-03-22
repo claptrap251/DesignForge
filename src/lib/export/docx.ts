@@ -10,7 +10,6 @@ import {
   WidthType,
   Packer,
   BorderStyle,
-  ShadingType,
   ImageRun,
 } from "docx";
 import { extractMermaidBlocks, renderMermaidToPng } from "./mermaid-utils";
@@ -110,58 +109,22 @@ export async function exportToDocx(projectId: string): Promise<Buffer> {
 
             // Add mermaid diagram as rendered image
             if (i < mermaidBlocks.length) {
-              try {
-                const pngBuffer = await renderMermaidToPng(
-                  mermaidBlocks[i],
-                  `docx-diagram-${i}`
-                );
-                children.push(
-                  new Paragraph({
-                    children: [
-                      new ImageRun({
-                        data: pngBuffer,
-                        transformation: { width: 600, height: 400 },
-                        type: "png",
-                      }),
-                    ],
-                    spacing: { before: 200, after: 200 },
-                  })
-                );
-              } catch {
-                // Fallback: show source code if rendering fails
-                children.push(
-                  new Paragraph({
-                    children: [
-                      new TextRun({
-                        text: "Diagram (Mermaid)",
-                        bold: true,
-                        color: "4F46E5",
-                        size: 20,
-                      }),
-                    ],
-                    spacing: { before: 200 },
-                  })
-                );
-                const lines = mermaidBlocks[i].split("\n");
-                for (const line of lines) {
-                  children.push(
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: line,
-                          font: "Courier New",
-                          size: 18,
-                        }),
-                      ],
-                      shading: {
-                        type: ShadingType.SOLID,
-                        color: "F3F4F6",
-                        fill: "F3F4F6",
-                      },
-                    })
-                  );
-                }
-              }
+              const pngBuffer = await renderMermaidToPng(
+                mermaidBlocks[i],
+                `docx-diagram-${i}`
+              );
+              children.push(
+                new Paragraph({
+                  children: [
+                    new ImageRun({
+                      data: pngBuffer,
+                      transformation: { width: 600, height: 400 },
+                      type: "png",
+                    }),
+                  ],
+                  spacing: { before: 200, after: 200 },
+                })
+              );
             }
           }
         } else {

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { containsMermaid } from "./mermaid-utils";
+import { containsMermaid, markdownToHtmlWithMermaidSvg } from "./mermaid-utils";
 
 const HTML_STYLES = `
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 40px; color: #333; }
@@ -25,14 +25,7 @@ const HTML_STYLES = `
   @media print { .mermaid svg { max-width: 100%; } }
 `;
 
-// Mermaid CDN script tag — renders diagrams client-side when the HTML is opened
-const MERMAID_SCRIPT = `
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: true, theme: 'default' });
-</script>`;
-
-function buildHtmlDocument(bodyContent: string, hasMermaid: boolean): Buffer {
+function buildHtmlDocument(bodyContent: string): Buffer {
   let html = `<!DOCTYPE html>
 <html>
 <head>
@@ -42,11 +35,6 @@ function buildHtmlDocument(bodyContent: string, hasMermaid: boolean): Buffer {
 <body>`;
 
   html += bodyContent;
-
-  if (hasMermaid) {
-    html += MERMAID_SCRIPT;
-  }
-
   html += `</body></html>`;
   return Buffer.from(html, "utf-8");
 }
@@ -77,48 +65,12 @@ function renderCommentsHtml(comments: any[]): string {
   return html;
 }
 
-async function renderDesignContentHtml(content: string): Promise<{ html: string; needsFallback: boolean }> {
-  if (!containsMermaid(content)) {
-    return { html: `<div class="markdown-content"><pre>${esc(content)}</pre></div>`, needsFallback: false };
+async function renderDesignContentHtml(content: string): Promise<string> {
+  if (containsMermaid(content)) {
+    const rendered = await markdownToHtmlWithMermaidSvg(content);
+    return `<div class="markdown-content">${rendered}</div>`;
   }
-
-  // Render each mermaid block server-side as SVG.
-  // If any individual diagram fails, output it as <pre class="mermaid">
-  // for the CDN script to render client-side.
-  const { renderMermaidToSvg } = await import("./mermaid-utils");
-  const mermaidBlockRegex = /```mermaid\s*\n([\s\S]*?)```/g;
-  let result = "";
-  let lastIndex = 0;
-  let diagramIndex = 0;
-  let needsFallback = false;
-  let match;
-
-  while ((match = mermaidBlockRegex.exec(content)) !== null) {
-    const before = content.slice(lastIndex, match.index);
-    if (before.trim()) {
-      result += `<div class="markdown-text"><pre>${esc(before)}</pre></div>`;
-    }
-
-    const mermaidCode = match[1].trim();
-    try {
-      const svg = await renderMermaidToSvg(mermaidCode, `diagram-${diagramIndex++}`);
-      result += `<div class="mermaid">${svg}</div>`;
-    } catch (err) {
-      // Fallback: raw mermaid code for CDN script to render client-side
-      console.error("Mermaid server render failed, falling back to CDN:", err);
-      result += `<pre class="mermaid">${mermaidCode}</pre>`;
-      needsFallback = true;
-    }
-
-    lastIndex = match.index + match[0].length;
-  }
-
-  const remaining = content.slice(lastIndex);
-  if (remaining.trim()) {
-    result += `<div class="markdown-text"><pre>${esc(remaining)}</pre></div>`;
-  }
-
-  return { html: `<div class="markdown-content">${result}</div>`, needsFallback };
+  return `<div class="markdown-content"><pre>${esc(content)}</pre></div>`;
 }
 
 export async function exportToHtml(projectId: string): Promise<Buffer> {
@@ -153,8 +105,6 @@ export async function exportToHtml(projectId: string): Promise<Buffer> {
     body += `<p>${esc(project.description)}</p>`;
   }
 
-  let needsFallback = false;
-
   for (const folder of project.folders) {
     body += `<h2>${esc(folder.name)}</h2>`;
 
@@ -162,16 +112,14 @@ export async function exportToHtml(projectId: string): Promise<Buffer> {
       body += `<h3>${esc(design.name)} <span class="meta">(${design.type})</span></h3>`;
 
       if (design.type === "MARKDOWN" && design.content) {
-        const result = await renderDesignContentHtml(design.content);
-        body += result.html;
-        if (result.needsFallback) needsFallback = true;
+        body += await renderDesignContentHtml(design.content);
       }
 
       body += renderCommentsHtml(design.comments);
     }
   }
 
-  return buildHtmlDocument(body, needsFallback);
+  return buildHtmlDocument(body);
 }
 
 /** Export a single design as HTML */
@@ -193,17 +141,14 @@ export async function exportDesignToHtml(designId: string): Promise<Buffer> {
   }
 
   let body = `<h1>${esc(design.name)} <span class="meta">(${design.type})</span></h1>`;
-  let needsFallback = false;
 
   if (design.type === "MARKDOWN" && design.content) {
-    const result = await renderDesignContentHtml(design.content);
-    body += result.html;
-    needsFallback = result.needsFallback;
+    body += await renderDesignContentHtml(design.content);
   }
 
   body += renderCommentsHtml(design.comments);
 
-  return buildHtmlDocument(body, needsFallback);
+  return buildHtmlDocument(body);
 }
 
 function esc(str: string): string {

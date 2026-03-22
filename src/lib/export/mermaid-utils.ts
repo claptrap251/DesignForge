@@ -19,7 +19,55 @@ function ensureMermaidDom(): JSDOM {
     url: "http://localhost",
   });
 
-  // Patch SVG methods that jsdom doesn't implement
+  const win = dom.window as any;
+
+  // Stub matchMedia — mermaid uses it for theme/media queries
+  if (!win.matchMedia) {
+    win.matchMedia = (query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    });
+  }
+
+  // Stub ResizeObserver — mermaid uses it for layout calculations
+  if (!win.ResizeObserver) {
+    win.ResizeObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+  }
+
+  // Stub IntersectionObserver
+  if (!win.IntersectionObserver) {
+    win.IntersectionObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    };
+  }
+
+  // Stub SVGPathElement, SVGTextElement and other SVG classes jsdom lacks
+  const svgClassStubs = [
+    "SVGPathElement", "SVGTextElement", "SVGTSpanElement",
+    "SVGCircleElement", "SVGEllipseElement", "SVGRectElement",
+    "SVGLineElement", "SVGPolylineElement", "SVGPolygonElement",
+    "SVGGElement", "SVGDefsElement", "SVGUseElement",
+    "SVGMarkerElement", "SVGClipPathElement", "SVGForeignObjectElement",
+  ];
+  for (const cls of svgClassStubs) {
+    if (!win[cls]) {
+      win[cls] = win.SVGElement ?? class extends win.Element {};
+    }
+  }
+
+  // Patch SVG methods that jsdom doesn't implement on created elements
   const origCreateElementNS = dom.window.document.createElementNS.bind(dom.window.document);
   dom.window.document.createElementNS = function (ns: string, tag: string) {
     const el = origCreateElementNS(ns, tag);
@@ -35,7 +83,15 @@ function ensureMermaidDom(): JSDOM {
         svgEl.getBoundingClientRect = () => ({
           x: 0, y: 0, width: 100, height: 100,
           top: 0, left: 0, bottom: 100, right: 100,
+          toJSON: () => ({}),
         });
+      // Stub createSVGRect for SVGSVGElement
+      if (tag === "svg" && !svgEl.createSVGRect) {
+        svgEl.createSVGRect = () => ({ x: 0, y: 0, width: 0, height: 0 });
+      }
+      if (tag === "svg" && !svgEl.createSVGPoint) {
+        svgEl.createSVGPoint = () => ({ x: 0, y: 0, matrixTransform: () => ({ x: 0, y: 0 }) });
+      }
     }
     return el;
   } as typeof dom.window.document.createElementNS;
@@ -45,20 +101,41 @@ function ensureMermaidDom(): JSDOM {
 }
 
 function setDomGlobals(dom: JSDOM): Record<string, PropertyDescriptor | undefined> {
+  const win = dom.window as any;
   const globalKeys = [
     "window", "document", "navigator", "DOMParser",
     "XMLSerializer", "self", "Element", "HTMLElement",
+    "SVGElement", "SVGGraphicsElement", "SVGPathElement",
+    "SVGTextElement", "SVGTSpanElement",
+    "matchMedia", "ResizeObserver", "IntersectionObserver",
+    "requestAnimationFrame", "cancelAnimationFrame",
+    "getComputedStyle", "MutationObserver", "CustomEvent",
+    "CSSStyleDeclaration",
   ];
 
   const globalValues: Record<string, unknown> = {
-    window: dom.window,
-    document: dom.window.document,
-    navigator: dom.window.navigator,
-    DOMParser: dom.window.DOMParser,
-    XMLSerializer: dom.window.XMLSerializer,
-    self: dom.window,
-    Element: dom.window.Element,
-    HTMLElement: dom.window.HTMLElement,
+    window: win,
+    document: win.document,
+    navigator: win.navigator,
+    DOMParser: win.DOMParser,
+    XMLSerializer: win.XMLSerializer,
+    self: win,
+    Element: win.Element,
+    HTMLElement: win.HTMLElement,
+    SVGElement: win.SVGElement,
+    SVGGraphicsElement: win.SVGGraphicsElement,
+    SVGPathElement: win.SVGPathElement,
+    SVGTextElement: win.SVGTextElement,
+    SVGTSpanElement: win.SVGTSpanElement,
+    matchMedia: win.matchMedia,
+    ResizeObserver: win.ResizeObserver,
+    IntersectionObserver: win.IntersectionObserver,
+    requestAnimationFrame: win.requestAnimationFrame,
+    cancelAnimationFrame: win.cancelAnimationFrame,
+    getComputedStyle: win.getComputedStyle,
+    MutationObserver: win.MutationObserver,
+    CustomEvent: win.CustomEvent,
+    CSSStyleDeclaration: win.CSSStyleDeclaration,
   };
 
   const prevDescriptors: Record<string, PropertyDescriptor | undefined> = {};
@@ -132,14 +209,8 @@ export async function markdownToHtmlWithMermaidSvg(content: string): Promise<str
     }
 
     const mermaidCode = match[1].trim();
-    try {
-      const svg = await renderMermaidToSvg(mermaidCode, `diagram-${diagramIndex++}`);
-      result += `<div class="mermaid">${svg}</div>`;
-    } catch (err) {
-      // Fallback: show source code if rendering fails
-      console.error("Mermaid render failed:", err);
-      result += `<div class="mermaid"><pre>${esc(mermaidCode)}</pre></div>`;
-    }
+    const svg = await renderMermaidToSvg(mermaidCode, `diagram-${diagramIndex++}`);
+    result += `<div class="mermaid">${svg}</div>`;
 
     lastIndex = match.index + match[0].length;
   }
