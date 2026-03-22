@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import ImageViewer from "@/components/design/ImageViewer";
@@ -24,6 +24,9 @@ export default function DesignViewerPage() {
   const [showUploadVersion, setShowUploadVersion] = useState(false);
   const [viewingVersion, setViewingVersion] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
 
   const fetchDesign = useCallback(async () => {
     const res = await fetch(`/api/designs/${designId}`);
@@ -38,6 +41,58 @@ export default function DesignViewerPage() {
     const interval = setInterval(fetchDesign, 5000);
     return () => clearInterval(interval);
   }, [fetchDesign]);
+
+  // Close export menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+    };
+    if (showExportMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showExportMenu]);
+
+  const handleExportDesign = async (format: "md" | "html" | "confluence") => {
+    setExporting(true);
+    setShowExportMenu(false);
+
+    try {
+      if (format === "md") {
+        // Direct markdown download from current/viewed content
+        const content =
+          viewingVersion && viewingVersion.version !== design?.currentVersion
+            ? viewingVersion.content || ""
+            : design?.content || "";
+        const blob = new Blob([content], { type: "text/markdown" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${design?.name || "design"}.md`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } else {
+        // Server-side export for HTML/Confluence
+        const res = await fetch(`/api/designs/${designId}/export?format=${format}`);
+        if (!res.ok) throw new Error("Export failed");
+        const blob = await res.blob();
+        const ext = format === "confluence" ? "html" : format;
+        const suffix = format === "confluence" ? "-confluence" : "";
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${design?.name || "design"}${suffix}.${ext}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      console.error("Export failed:", err);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleAddComment = async (
     x: number,
@@ -143,28 +198,48 @@ export default function DesignViewerPage() {
               }
             }}
           />
-          {design.type === "MARKDOWN" && design.content && (
+          <div className="relative" ref={exportMenuRef}>
             <button
-              onClick={() => {
-                const content = viewingVersion && viewingVersion.version !== design.currentVersion
-                  ? viewingVersion.content || ""
-                  : design.content || "";
-                const blob = new Blob([content], { type: "text/markdown" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `${design.name}.md`;
-                a.click();
-                URL.revokeObjectURL(url);
-              }}
-              className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              onClick={() => setShowExportMenu(!showExportMenu)}
+              disabled={exporting}
+              className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              Export MD
+              {exporting ? "Exporting..." : "Export"}
+              <svg className="h-3 w-3 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
             </button>
-          )}
+            {showExportMenu && (
+              <div className="absolute right-0 top-full mt-1 w-52 rounded-lg border border-gray-200 bg-white py-1 shadow-lg z-20">
+                {design.type === "MARKDOWN" && design.content && (
+                  <button
+                    onClick={() => handleExportDesign("md")}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <span className="w-5 text-center text-xs font-bold text-gray-400">MD</span>
+                    Markdown
+                  </button>
+                )}
+                <button
+                  onClick={() => handleExportDesign("html")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <span className="w-5 text-center text-xs font-bold text-gray-400">{"<>"}</span>
+                  HTML
+                </button>
+                <button
+                  onClick={() => handleExportDesign("confluence")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <span className="w-5 text-center text-xs font-bold text-indigo-400">C</span>
+                  Confluence
+                </button>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => setShowUploadVersion(true)}
             className="flex items-center gap-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
