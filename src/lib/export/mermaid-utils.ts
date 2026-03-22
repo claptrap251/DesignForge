@@ -100,19 +100,12 @@ function ensureMermaidDom(): JSDOM {
   return dom;
 }
 
-function setDomGlobals(dom: JSDOM): Record<string, PropertyDescriptor | undefined> {
-  const win = dom.window as any;
-  const globalKeys = [
-    "window", "document", "navigator", "DOMParser",
-    "XMLSerializer", "self", "Element", "HTMLElement",
-    "SVGElement", "SVGGraphicsElement", "SVGPathElement",
-    "SVGTextElement", "SVGTSpanElement",
-    "matchMedia", "ResizeObserver", "IntersectionObserver",
-    "requestAnimationFrame", "cancelAnimationFrame",
-    "getComputedStyle", "MutationObserver", "CustomEvent",
-    "CSSStyleDeclaration",
-  ];
+let domGlobalsSet = false;
 
+function ensureDomGlobals(dom: JSDOM): void {
+  if (domGlobalsSet) return;
+
+  const win = dom.window as any;
   const globalValues: Record<string, unknown> = {
     window: win,
     document: win.document,
@@ -138,58 +131,66 @@ function setDomGlobals(dom: JSDOM): Record<string, PropertyDescriptor | undefine
     CSSStyleDeclaration: win.CSSStyleDeclaration,
   };
 
-  const prevDescriptors: Record<string, PropertyDescriptor | undefined> = {};
-  for (const key of globalKeys) {
-    prevDescriptors[key] = Object.getOwnPropertyDescriptor(globalThis, key);
+  for (const [key, value] of Object.entries(globalValues)) {
     Object.defineProperty(globalThis, key, {
-      value: globalValues[key],
+      value,
       writable: true,
       configurable: true,
     });
   }
-  return prevDescriptors;
-}
 
-function restoreDomGlobals(prevDescriptors: Record<string, PropertyDescriptor | undefined>) {
-  for (const [key, prev] of Object.entries(prevDescriptors)) {
-    if (prev) {
-      Object.defineProperty(globalThis, key, prev);
-    } else {
-      delete (globalThis as any)[key];
-    }
-  }
+  domGlobalsSet = true;
 }
 
 /** Render mermaid code to SVG server-side using jsdom */
 export async function renderMermaidToSvg(code: string, id: string): Promise<string> {
   const dom = ensureMermaidDom();
 
-  // Clean up any leftover elements from previous renders
-  dom.window.document.body.innerHTML = "";
+  // Mermaid is a singleton that caches DOM globals (window, document, etc.)
+  // at import time.  Restoring globals between renders breaks subsequent
+  // calls, so we set them once and leave them in place.
+  ensureDomGlobals(dom);
 
-  const prevDescriptors = setDomGlobals(dom);
-
-  try {
-    if (!mermaidInstance) {
-      mermaidInstance = (await import("mermaid")).default;
-    }
-    mermaidInstance.initialize({ startOnLoad: false, theme: "default" });
-
-    // Use unique IDs to avoid conflicts between renders
-    const uniqueId = `${id}-${renderCounter++}`;
-    const { svg } = await mermaidInstance.render(uniqueId, code);
-    return svg;
-  } finally {
-    restoreDomGlobals(prevDescriptors);
+  if (!mermaidInstance) {
+    mermaidInstance = (await import("mermaid")).default;
   }
+  mermaidInstance.initialize({ startOnLoad: false, theme: "default" });
+
+  // Use unique IDs to avoid conflicts between renders.
+  // Let mermaid manage its own DOM lifecycle — it calls
+  // removeExistingElements() internally to clean up previous renders.
+  const uniqueId = `${id}-${renderCounter++}`;
+  const { svg } = await mermaidInstance.render(uniqueId, code);
+
+  return svg;
 }
 
 /** Render mermaid code to PNG buffer for embedding in docx */
 export async function renderMermaidToPng(code: string, id: string): Promise<Buffer> {
   const sharp = (await import("sharp")).default;
   const svg = await renderMermaidToSvg(code, id);
-  // Replace width="100%" with a fixed pixel width for rasterization
-  const svgFixed = svg.replace(/width="100%"/, 'width="800"');
+
+  // Mermaid outputs width="100%" with a style containing max-width in px,
+  // plus a viewBox.  Sharp needs explicit pixel width/height to rasterize.
+  // Extract dimensions from the viewBox and scale to a reasonable output size.
+  let width = 800;
+  let height = 600;
+  const viewBoxMatch = svg.match(/viewBox="[\d.\-]+\s+[\d.\-]+\s+([\d.]+)\s+([\d.]+)"/);
+  if (viewBoxMatch) {
+    const vbWidth = parseFloat(viewBoxMatch[1]);
+    const vbHeight = parseFloat(viewBoxMatch[2]);
+    if (vbWidth > 0 && vbHeight > 0) {
+      const scale = width / vbWidth;
+      height = Math.round(vbHeight * scale);
+    }
+  }
+
+  // Replace width="100%" with pixel width, and inject height attribute
+  const svgFixed = svg.replace(
+    /width="100%"/,
+    `width="${width}" height="${height}"`
+  );
+
   const pngBuffer = await sharp(Buffer.from(svgFixed)).png().toBuffer();
   return Buffer.from(pngBuffer);
 }
