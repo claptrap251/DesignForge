@@ -79,8 +79,26 @@ async function renderDesignContentHtml(content: string): Promise<{ html: string;
   if (!containsMermaid(content)) {
     return { html: `<div class="markdown-content"><pre>${esc(content)}</pre></div>`, needsFallback: false };
   }
-  const { html: rendered, needsFallback } = await markdownToHtmlWithMermaidSvg(content);
-  return { html: `<div class="markdown-content">${rendered}</div>`, needsFallback };
+  try {
+    const { html: rendered, needsFallback } = await markdownToHtmlWithMermaidSvg(content);
+    return { html: `<div class="markdown-content">${rendered}</div>`, needsFallback };
+  } catch (err) {
+    console.error("renderDesignContentHtml failed, falling back to CDN:", err);
+    // Fall back to client-side mermaid rendering via CDN
+    const mermaidBlockRegex = /```mermaid\s*\n([\s\S]*?)```/g;
+    let result = "";
+    let lastIndex = 0;
+    let match;
+    while ((match = mermaidBlockRegex.exec(content)) !== null) {
+      const before = content.slice(lastIndex, match.index);
+      if (before.trim()) result += `<div class="markdown-text"><pre>${esc(before)}</pre></div>`;
+      result += `<pre class="mermaid">${match[1].trim()}</pre>`;
+      lastIndex = match.index + match[0].length;
+    }
+    const remaining = content.slice(lastIndex);
+    if (remaining.trim()) result += `<div class="markdown-text"><pre>${esc(remaining)}</pre></div>`;
+    return { html: `<div class="markdown-content">${result}</div>`, needsFallback: true };
+  }
 }
 
 export async function exportToHtml(projectId: string): Promise<Buffer> {

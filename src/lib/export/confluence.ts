@@ -5,40 +5,45 @@ async function renderDesignContentConfluence(
   content: string,
   prefix: string
 ): Promise<string> {
-  let html = "";
-  const mermaidRegex = /```mermaid\s*\n([\s\S]*?)```/g;
-  let lastIdx = 0;
-  let mermaidMatch;
-  let hasParts = false;
+  try {
+    let html = "";
+    const mermaidRegex = /```mermaid\s*\n([\s\S]*?)```/g;
+    let lastIdx = 0;
+    let mermaidMatch;
+    let hasParts = false;
 
-  let diagramIdx = 0;
-  while ((mermaidMatch = mermaidRegex.exec(content)) !== null) {
-    hasParts = true;
-    const before = content.slice(lastIdx, mermaidMatch.index).trim();
-    if (before) {
-      html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${before}]]></ac:plain-text-body></ac:structured-macro>\n`;
+    let diagramIdx = 0;
+    while ((mermaidMatch = mermaidRegex.exec(content)) !== null) {
+      hasParts = true;
+      const before = content.slice(lastIdx, mermaidMatch.index).trim();
+      if (before) {
+        html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${before}]]></ac:plain-text-body></ac:structured-macro>\n`;
+      }
+      const mermaidCode = mermaidMatch[1].trim();
+      try {
+        const svg = await renderMermaidToSvg(mermaidCode, `${prefix}-${diagramIdx++}`);
+        html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[<div style="display:flex;justify-content:center;padding:16px">${svg}</div>]]></ac:plain-text-body></ac:structured-macro>\n`;
+      } catch (err) {
+        console.error(`Mermaid render failed for confluence diagram ${prefix}-${diagramIdx - 1}:`, err);
+        html += `<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:parameter ac:name="title">Diagram (render failed)</ac:parameter><ac:plain-text-body><![CDATA[${mermaidCode}]]></ac:plain-text-body></ac:structured-macro>\n`;
+      }
+      lastIdx = mermaidMatch.index + mermaidMatch[0].length;
     }
-    const mermaidCode = mermaidMatch[1].trim();
-    try {
-      const svg = await renderMermaidToSvg(mermaidCode, `${prefix}-${diagramIdx++}`);
-      html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[<div style="display:flex;justify-content:center;padding:16px">${svg}</div>]]></ac:plain-text-body></ac:structured-macro>\n`;
-    } catch (err) {
-      console.error(`Mermaid render failed for confluence diagram ${prefix}-${diagramIdx - 1}:`, err);
-      html += `<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:parameter ac:name="title">Diagram (render failed)</ac:parameter><ac:plain-text-body><![CDATA[${mermaidCode}]]></ac:plain-text-body></ac:structured-macro>\n`;
+
+    const remaining = content.slice(lastIdx).trim();
+    if (remaining) {
+      html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${remaining}]]></ac:plain-text-body></ac:structured-macro>\n`;
     }
-    lastIdx = mermaidMatch.index + mermaidMatch[0].length;
-  }
 
-  const remaining = content.slice(lastIdx).trim();
-  if (remaining) {
-    html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${remaining}]]></ac:plain-text-body></ac:structured-macro>\n`;
-  }
+    if (!hasParts) {
+      html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${content}]]></ac:plain-text-body></ac:structured-macro>\n`;
+    }
 
-  if (!hasParts) {
-    html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${content}]]></ac:plain-text-body></ac:structured-macro>\n`;
+    return html;
+  } catch (err) {
+    console.error("renderDesignContentConfluence failed entirely:", err);
+    return `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${content}]]></ac:plain-text-body></ac:structured-macro>\n`;
   }
-
-  return html;
 }
 
 function renderCommentsConfluence(comments: any[]): string {
