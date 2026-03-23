@@ -12,9 +12,12 @@ import { marked } from "marked";
 
 const execFileAsync = promisify(execFile);
 
-/** Resolve the mmdc binary path from @mermaid-js/mermaid-cli */
+/** Resolve the mmdc binary path from node_modules/.bin */
 function getMmdcPath(): string {
-  return require.resolve("@mermaid-js/mermaid-cli/src/cli.js");
+  // The @mermaid-js/mermaid-cli package restricts CJS require.resolve via
+  // its exports map, so we locate the mmdc binary through the .bin symlink.
+  const binPath = path.resolve(process.cwd(), "node_modules/.bin/mmdc");
+  return binPath;
 }
 
 const MMDC_PATH = getMmdcPath();
@@ -58,8 +61,8 @@ export async function renderMermaidToSvg(
     await writeFile(inputFile, code, "utf-8");
     const configPath = await getPuppeteerConfigPath();
     await execFileAsync(
-      "node",
-      [MMDC_PATH, "-i", inputFile, "-o", outputFile, "-e", "svg", "-p", configPath],
+      MMDC_PATH,
+      ["-i", inputFile, "-o", outputFile, "-e", "svg", "-p", configPath],
       { timeout: 30000 }
     );
     const svg = await readFile(outputFile, "utf-8");
@@ -82,8 +85,8 @@ export async function renderMermaidToPng(
     await writeFile(inputFile, code, "utf-8");
     const configPath = await getPuppeteerConfigPath();
     await execFileAsync(
-      "node",
-      [MMDC_PATH, "-i", inputFile, "-o", outputFile, "-e", "png", "-p", configPath],
+      MMDC_PATH,
+      ["-i", inputFile, "-o", outputFile, "-e", "png", "-p", configPath],
       { timeout: 30000 }
     );
     const pngBuffer = await readFile(outputFile);
