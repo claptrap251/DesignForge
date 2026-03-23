@@ -25,12 +25,15 @@ Replace the jsdom renderer with `@mermaid-js/mermaid-cli`, which provides the `m
 
 ### Changes
 
-**New dependency:**
+**New dependencies:**
 - `@mermaid-js/mermaid-cli` (provides `mmdc` binary with bundled Chromium)
+- `marked` (explicit dependency -- currently only a transitive dep but used directly in `html.ts` and `mermaid-utils.ts`)
 
 **Dependencies removed:**
-- `jsdom` -- no longer needed for mermaid rendering
-- `sharp` -- no longer needed for SVG-to-PNG conversion (`mmdc` outputs PNG natively)
+- `jsdom` and `@types/jsdom` -- no longer needed for mermaid rendering
+- Remove dynamic `import("sharp")` from `mermaid-utils.ts` -- `mmdc` outputs PNG natively via `mmdc -e png`
+
+Note: `sharp` is not in `package.json` (it was a dynamic import), so no package.json removal needed -- just remove the import from `mermaid-utils.ts`.
 
 **Rewrite `src/lib/export/mermaid-utils.ts`:**
 
@@ -43,8 +46,8 @@ Replace the jsdom renderer with `@mermaid-js/mermaid-cli`, which provides the `m
 | Render mutex | Serializes renders due to mermaid singleton | **Removed** -- separate CLI processes handle concurrency |
 | `containsMermaid(content)` | Regex detection | **Unchanged** |
 | `extractMermaidBlocks(content)` | Regex extraction | **Unchanged** |
-| `markdownToHtmlWithMermaidSvg(content)` | Calls renderMermaidToSvg, returns `{ html, needsFallback }` | Calls renderMermaidToSvg (new impl). Remove `needsFallback` from return -- it is always `false` now. Return `{ html }` only. |
-| `markdownToHtmlWithMermaid(content)` | Client-side rendering (raw mermaid divs) | **Removed** -- no longer needed since server-side rendering is reliable |
+| `markdownToHtmlWithMermaidSvg(content)` | Calls renderMermaidToSvg, returns `{ html, needsFallback }` | Calls renderMermaidToSvg (new impl). Remove `needsFallback` from return type -- always succeeds now. Return `string` (just the HTML). All callers in `html.ts` that destructure `needsFallback` must be updated. |
+| `markdownToHtmlWithMermaid(content)` | Client-side rendering (raw mermaid divs) | **Removed** -- no longer needed since server-side rendering is reliable. Tests in `exports.test.ts` that import/use this function must be removed. |
 
 **Error handling:**
 - If `mmdc` fails for a specific diagram (e.g., syntax error in mermaid code), log the error and return a styled error placeholder: `<div style="background:#f3f4f6;border:1px solid #e5e7eb;padding:16px;border-radius:8px;color:#6b7280;font-style:italic">Diagram render error: [message]</div>`
@@ -52,7 +55,15 @@ Replace the jsdom renderer with `@mermaid-js/mermaid-cli`, which provides the `m
 
 **HTML export (`src/lib/export/html.ts`):**
 - Remove the `MERMAID_SCRIPT` CDN fallback constant and all `needsFallback` conditional logic.
+- Update `renderDesignContentHtml()` to match the new `markdownToHtmlWithMermaidSvg()` return type (string, not `{ html, needsFallback }`).
 - All mermaid content is pre-rendered as inline SVGs.
+
+**MarkdownViewer component (`src/components/design/MarkdownViewer.tsx`):**
+- No changes. This component uses client-side mermaid rendering (`mermaid.render()` in `useEffect`) for the live in-app viewer. Client-side rendering is appropriate here since the browser has full DOM support. The `mmdc` changes only affect the server-side export pipeline.
+
+**Dockerfile:**
+- The current `node:20-alpine` base image does not include the system libraries Chromium needs (glibc, libx11, etc.). Switch to `node:20-slim` (Debian-based, smaller than full `node:20` but includes necessary libs) or add Chromium system deps to Alpine via `apk add chromium nss freetype harfbuzz ca-certificates ttf-freefont` and set `PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser`.
+- Also copy `node_modules/@mermaid-js` into the runner stage so `mmdc` is available at runtime.
 
 ### Interface
 
@@ -70,7 +81,7 @@ The current Confluence export (`src/lib/export/confluence.ts`) has two issues:
 
 ### Solution
 
-1. Use `marked` (already a project dependency) to convert markdown text to HTML, then wrap in `ac:structured-macro ac:name="html"` so Confluence renders it as formatted content.
+1. Use `marked` (added as an explicit dependency in Section 1) to convert markdown text to HTML, then wrap in `ac:structured-macro ac:name="html"` so Confluence renders it as formatted content.
 2. With the `mmdc`-based renderer from Section 1, mermaid SVG rendering will succeed. The existing HTML macro wrapping pattern is correct.
 
 ### Changes
@@ -97,8 +108,7 @@ The current Confluence export (`src/lib/export/confluence.ts`) has two issues:
 
 ### What doesn't change
 
-- The export API route (`src/app/api/export/[projectId]/route.ts`) -- same endpoint, same response format.
-- The single-design export route -- same pattern.
+- The export API routes (`src/app/api/export/[projectId]/route.ts` and `src/app/api/designs/[id]/export/route.ts`) -- same endpoints, same response format. Both routes call the same underlying export functions (`exportToConfluence`, `exportDesignToConfluence`, etc.) which are where the actual changes happen.
 - The ExportDialog component -- same UI.
 
 ---
@@ -165,6 +175,7 @@ Since this is a fresh database (no existing users), the migration is a simple `p
 
 - `Comment.authorName` / `Reply.authorName` -- plain strings, no schema change. When creating comments, the system uses `session.user.name || session.user.username` as the author name.
 - The session type needs extending to include `username` (update `src/types/index.ts` or NextAuth type declarations).
+- `src/components/layout/Header.tsx` -- currently shows `session.user?.name || session.user?.email`. Update fallback to `session.user?.name || session.user?.username` since email may now be undefined.
 
 ---
 
@@ -176,7 +187,7 @@ Since this is a fresh database (no existing users), the migration is a simple `p
 - **PNG rendering:** Verify `renderMermaidToPng()` produces valid PNG buffer (magic bytes `\x89PNG`).
 - **Error handling:** Pass invalid mermaid syntax, verify error placeholder HTML is returned (not an exception).
 - **Concurrent renders:** Call `renderMermaidToSvg()` multiple times concurrently, verify all produce valid output.
-- **Remove:** Tests that relied on jsdom internals or mermaid singleton behavior.
+- **Remove:** Tests that import or use `markdownToHtmlWithMermaid` (the removed client-side function). Remove tests that relied on jsdom internals or mermaid singleton behavior.
 
 ### Confluence Export Tests
 
@@ -197,16 +208,18 @@ Since this is a fresh database (no existing users), the migration is a simple `p
 
 | File | Change |
 |------|--------|
-| `package.json` | Add `@mermaid-js/mermaid-cli`. Remove `jsdom`, `sharp`. |
+| `package.json` | Add `@mermaid-js/mermaid-cli`, `marked`. Remove `jsdom`, `@types/jsdom`. |
+| `Dockerfile` | Switch to `node:20-slim` or add Chromium deps to Alpine. Copy `mmdc` into runner stage. |
 | `prisma/schema.prisma` | Add `username` field, make `email` optional and non-unique. |
-| `src/lib/export/mermaid-utils.ts` | Full rewrite: jsdom renderer -> mmdc CLI. |
-| `src/lib/export/html.ts` | Remove CDN fallback, remove `needsFallback` logic. |
-| `src/lib/export/confluence.ts` | Render markdown as HTML instead of code blocks. |
+| `src/lib/export/mermaid-utils.ts` | Full rewrite: jsdom renderer -> mmdc CLI. Remove `markdownToHtmlWithMermaid`. Remove sharp import. |
+| `src/lib/export/html.ts` | Remove CDN fallback, remove `needsFallback` logic. Update callers of `markdownToHtmlWithMermaidSvg`. |
+| `src/lib/export/confluence.ts` | Render markdown as HTML (via `marked`) instead of code blocks. |
 | `src/lib/auth.ts` | Login by username instead of email. Expose username in session. |
 | `src/app/api/auth/register/route.ts` | Accept username, validate format, make email optional. |
 | `src/app/(auth)/register/page.tsx` | Username field (required), email field (optional). |
 | `src/app/(auth)/login/page.tsx` | Username field instead of email. |
+| `src/components/layout/Header.tsx` | Update display name fallback from `email` to `username`. |
 | `src/types/index.ts` | Add `username` to session user type. |
-| `tests/exports.test.ts` | Update mermaid tests for mmdc-based rendering. Add Confluence quality tests. |
+| `tests/exports.test.ts` | Update mermaid tests for mmdc-based rendering. Remove `markdownToHtmlWithMermaid` tests. Add Confluence quality tests. |
 | `tests/auth.test.ts` | Add username validation and login tests. |
-| `tests/helpers.ts` | Update `createTestUser` to use `username` instead of `email`. |
+| `tests/helpers.ts` | Update `createTestUser` to use `username` (e.g., `test_${Date.now()}`) instead of `email`. |
