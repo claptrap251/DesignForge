@@ -99,3 +99,12 @@ body {
 .prose ol {
   padding-left: 1.5em;
 }
+
+/* Code blocks: reset inline code styles inside pre */
+.prose pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  color: inherit;
+  font-size: inherit;
+}
