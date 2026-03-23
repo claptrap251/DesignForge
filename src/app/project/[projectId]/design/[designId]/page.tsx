@@ -148,6 +148,12 @@ export default function DesignViewerPage() {
     fetchDesign();
   };
 
+  const handleDeleteComment = async (commentId: string) => {
+    await fetch(apiUrl(`/api/comments/${commentId}`), { method: "DELETE" });
+    setSelectedCommentId(null);
+    fetchDesign();
+  };
+
   const handleAddMarkdownComment = (line: number) => {
     setPendingAnchorLine(line);
   };
@@ -448,6 +454,7 @@ export default function DesignViewerPage() {
           comments={design.comments || []}
           onResolve={handleResolve}
           onReply={handleReply}
+          onDelete={handleDeleteComment}
           selectedCommentId={selectedCommentId}
           onSelectComment={setSelectedCommentId}
           mobileOpen={commentSidebarOpen}

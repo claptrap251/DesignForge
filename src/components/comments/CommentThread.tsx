@@ -6,6 +6,7 @@ interface CommentThreadProps {
   comment: any;
   onResolve: (id: string) => void;
   onReply: (commentId: string, content: string, authorName: string, authorId?: string) => void;
+  onDelete?: (id: string) => void;
   isSelected: boolean;
   onClick: () => void;
   sessionUser?: { id: string; name?: string; username?: string };
@@ -15,6 +16,7 @@ export default function CommentThread({
   comment,
   onResolve,
   onReply,
+  onDelete,
   isSelected,
   onClick,
   sessionUser,
@@ -22,6 +24,7 @@ export default function CommentThread({
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [replyAuthor, setReplyAuthor] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!sessionUser) {
@@ -175,15 +178,43 @@ export default function CommentThread({
             </div>
           </form>
         ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowReplyForm(true);
-            }}
-            className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
-          >
-            Reply
-          </button>
+          <>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowReplyForm(true);
+              }}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+            >
+              Reply
+            </button>
+            {onDelete && sessionUser && (
+              confirmDelete ? (
+                <span className="inline-flex items-center gap-1.5 ml-3" onClick={(e) => e.stopPropagation()}>
+                  <span className="text-xs text-red-600 dark:text-red-400">Delete this comment?</span>
+                  <button
+                    onClick={() => { onDelete(comment.id); setConfirmDelete(false); }}
+                    className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-red-700"
+                  >
+                    Yes
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="rounded-md border border-gray-300 dark:border-gray-600 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    No
+                  </button>
+                </span>
+              ) : (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+                  className="ml-3 text-xs font-medium text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                >
+                  Delete
+                </button>
+              )
+            )}
+          </>
         )}
       </div>
     </div>

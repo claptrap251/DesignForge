@@ -7,8 +7,9 @@ interface CommentSidebarProps {
   comments: any[];
   onResolve: (id: string) => void;
   onReply: (commentId: string, content: string, authorName: string, authorId?: string) => void;
+  onDelete?: (id: string) => void;
   selectedCommentId: string | null;
-  onSelectComment: (id: string) => void;
+  onSelectComment: (id: string | null) => void;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
   sessionUser?: { id: string; name?: string; username?: string };
@@ -21,6 +22,7 @@ export default function CommentSidebar({
   comments,
   onResolve,
   onReply,
+  onDelete,
   selectedCommentId,
   onSelectComment,
   mobileOpen,
@@ -106,11 +108,13 @@ export default function CommentSidebar({
                 comment={comment}
                 onResolve={onResolve}
                 onReply={onReply}
+                onDelete={onDelete}
                 isSelected={selectedCommentId === comment.id}
                 onClick={() => {
-                  onSelectComment(comment.id);
-                  if (onScrollToComment) {
-                    onScrollToComment(comment.id);
+                  const newId = selectedCommentId === comment.id ? null : comment.id;
+                  onSelectComment(newId);
+                  if (newId && onScrollToComment) {
+                    onScrollToComment(newId);
                   }
                 }}
                 sessionUser={sessionUser}

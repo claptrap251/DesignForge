@@ -8,7 +8,7 @@ interface CommentPinProps {
     content: string;
   };
   isSelected: boolean;
-  onClick: (id: string) => void;
+  onClick: (id: string | null) => void;
 }
 
 export default function CommentPin({ pin, isSelected, onClick }: CommentPinProps) {
@@ -31,7 +31,7 @@ export default function CommentPin({ pin, isSelected, onClick }: CommentPinProps
       <button
         onClick={(e) => {
           e.stopPropagation();
-          onClick(pin.id);
+          onClick(isSelected ? null : pin.id);
         }}
         className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white shadow-md transition-all hover:scale-110 hover:opacity-100 ${bgColor} ${isSelected ? "opacity-100" : "opacity-40"}`}
       >
