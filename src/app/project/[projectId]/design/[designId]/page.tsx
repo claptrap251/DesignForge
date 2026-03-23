@@ -27,7 +27,12 @@ export default function DesignViewerPage() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [commentSidebarOpen, setCommentSidebarOpen] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copying" | "copied" | "error">("idle");
   const exportMenuRef = useRef<HTMLDivElement>(null);
+
+  const sessionUser = session?.user
+    ? { id: session.user.id, name: session.user.name ?? undefined, username: (session.user as any).username ?? undefined }
+    : undefined;
 
   const fetchDesign = useCallback(async () => {
     const res = await fetch(`/api/designs/${designId}`);
@@ -83,16 +88,33 @@ export default function DesignViewerPage() {
     }
   };
 
+  const handleCopyConfluence = async () => {
+    setCopyStatus("copying");
+    setShowExportMenu(false);
+    try {
+      const res = await fetch(`/api/designs/${designId}/export?format=confluence`);
+      if (!res.ok) throw new Error("Export failed");
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      setCopyStatus("copied");
+      setTimeout(() => setCopyStatus("idle"), 2000);
+    } catch {
+      setCopyStatus("error");
+      setTimeout(() => setCopyStatus("idle"), 3000);
+    }
+  };
+
   const handleAddComment = async (
     x: number,
     y: number,
     content: string,
-    authorName: string
+    authorName: string,
+    authorId?: string
   ) => {
     await fetch(`/api/designs/${designId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ xPercent: x, yPercent: y, content, authorName }),
+      body: JSON.stringify({ xPercent: x, yPercent: y, content, authorName, ...(authorId ? { authorId } : {}) }),
     });
     setIsAddMode(false);
     fetchDesign();
@@ -111,12 +133,13 @@ export default function DesignViewerPage() {
   const handleReply = async (
     commentId: string,
     content: string,
-    authorName: string
+    authorName: string,
+    authorId?: string
   ) => {
     await fetch(`/api/comments/${commentId}/replies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, authorName }),
+      body: JSON.stringify({ content, authorName, ...(authorId ? { authorId } : {}) }),
     });
     fetchDesign();
   };
@@ -233,6 +256,17 @@ export default function DesignViewerPage() {
                   <span className="w-5 text-center text-xs font-bold text-indigo-400">C</span>
                   Confluence
                 </button>
+                <div className="border-t border-gray-100 my-1" />
+                <button
+                  onClick={handleCopyConfluence}
+                  disabled={copyStatus === "copying"}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                  </svg>
+                  {copyStatus === "copying" ? "Copying..." : "Copy Confluence"}
+                </button>
               </div>
             )}
           </div>
@@ -283,6 +317,18 @@ export default function DesignViewerPage() {
         </div>
       </div>
 
+      {/* Copy status toast */}
+      {copyStatus === "copied" && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-lg">
+          Confluence markup copied to clipboard
+        </div>
+      )}
+      {copyStatus === "error" && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-lg">
+          Failed to copy — try downloading instead
+        </div>
+      )}
+
       {/* Viewing old version banner */}
       {viewingVersion && viewingVersion.version !== design.currentVersion && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-sm text-amber-800">
@@ -311,6 +357,7 @@ export default function DesignViewerPage() {
                 onSelectComment={setSelectedCommentId}
                 onAddComment={handleAddComment}
                 isAddMode={isAddMode}
+                sessionUser={sessionUser}
               />
             </ImageViewer>
           ) : (
@@ -327,6 +374,7 @@ export default function DesignViewerPage() {
                 onSelectComment={setSelectedCommentId}
                 onAddComment={handleAddComment}
                 isAddMode={isAddMode}
+                sessionUser={sessionUser}
               />
             </MarkdownViewer>
           )}
@@ -341,6 +389,7 @@ export default function DesignViewerPage() {
           onSelectComment={setSelectedCommentId}
           mobileOpen={commentSidebarOpen}
           onMobileClose={() => setCommentSidebarOpen(false)}
+          sessionUser={sessionUser}
         />
       </div>
 
