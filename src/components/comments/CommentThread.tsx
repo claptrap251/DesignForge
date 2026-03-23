@@ -98,6 +98,18 @@ export default function CommentThread({
 
       <p className="mt-2 text-sm text-gray-700">{comment.content}</p>
 
+      {comment.anchorLine != null && (
+        <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+          </svg>
+          <span>Line {comment.anchorLine}</span>
+          {comment.anchorHeading && (
+            <span className="text-gray-300">· {comment.anchorHeading}</span>
+          )}
+        </div>
+      )}
+
       {comment.replies && comment.replies.length > 0 && (
         <div className="mt-3 space-y-2 border-l-2 border-gray-200 pl-3">
           {comment.replies.map((reply: any) => (

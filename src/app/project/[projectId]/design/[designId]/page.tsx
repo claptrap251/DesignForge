@@ -8,6 +8,9 @@ import ImageViewer from "@/components/design/ImageViewer";
 import MarkdownViewer from "@/components/design/MarkdownViewer";
 import PinLayer from "@/components/comments/PinLayer";
 import CommentSidebar from "@/components/comments/CommentSidebar";
+import CommentForm from "@/components/comments/CommentForm";
+import LineGutter from "@/components/comments/LineGutter";
+import { computeAnchor } from "@/lib/anchor";
 import VersionHistory from "@/components/design/VersionHistory";
 import UploadNewVersion from "@/components/design/UploadNewVersion";
 
@@ -29,8 +32,10 @@ export default function DesignViewerPage() {
   const [commentSidebarOpen, setCommentSidebarOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copying" | "copied" | "error">("idle");
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const markdownContentRef = useRef<HTMLDivElement>(null);
+  const [pendingAnchorLine, setPendingAnchorLine] = useState<number | null>(null);
 
-  const sessionUser = session?.user
+  const sessionUser = session?.user?.id
     ? { id: session.user.id, name: session.user.name ?? undefined, username: (session.user as any).username ?? undefined }
     : undefined;
 
@@ -142,6 +147,48 @@ export default function DesignViewerPage() {
       body: JSON.stringify({ content, authorName, ...(authorId ? { authorId } : {}) }),
     });
     fetchDesign();
+  };
+
+  const handleAddMarkdownComment = (line: number) => {
+    setPendingAnchorLine(line);
+  };
+
+  const handleSubmitMarkdownComment = async (content: string, authorName: string, authorId?: string) => {
+    if (pendingAnchorLine === null) return;
+    const mdContent = viewingVersion?.content || design?.content || "";
+    const anchor = computeAnchor(pendingAnchorLine, mdContent);
+
+    await fetch(`/api/designs/${designId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        anchorLine: anchor.anchorLine,
+        anchorHeading: anchor.anchorHeading,
+        anchorContext: anchor.anchorContext,
+        contextBefore: anchor.contextBefore,
+        contextAfter: anchor.contextAfter,
+        content,
+        authorName,
+        ...(authorId ? { authorId } : {}),
+      }),
+    });
+    setPendingAnchorLine(null);
+    setIsAddMode(false);
+    fetchDesign();
+  };
+
+  const handleScrollToComment = (commentId: string) => {
+    const comment = design?.comments?.find((c: any) => c.id === commentId);
+    if (!comment?.anchorLine || !markdownContentRef.current) return;
+
+    const el = markdownContentRef.current.querySelector(
+      `[data-source-line="${comment.anchorLine}"]`
+    );
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      (el as HTMLElement).classList.add("bg-yellow-100");
+      setTimeout(() => (el as HTMLElement).classList.remove("bg-yellow-100"), 1500);
+    }
   };
 
   if (loading) {
@@ -361,22 +408,31 @@ export default function DesignViewerPage() {
               />
             </ImageViewer>
           ) : (
-            <MarkdownViewer
-              content={
-                viewingVersion && viewingVersion.version !== design.currentVersion
-                  ? viewingVersion.content || ""
-                  : design.content || ""
-              }
-            >
-              <PinLayer
+            <div className="flex h-full">
+              <LineGutter
+                markdownContent={
+                  viewingVersion && viewingVersion.version !== design.currentVersion
+                    ? viewingVersion.content || ""
+                    : design.content || ""
+                }
                 comments={design.comments || []}
                 selectedCommentId={selectedCommentId}
                 onSelectComment={setSelectedCommentId}
-                onAddComment={handleAddComment}
+                onAddComment={handleAddMarkdownComment}
                 isAddMode={isAddMode}
-                sessionUser={sessionUser}
+                contentRef={markdownContentRef}
               />
-            </MarkdownViewer>
+              <div className="flex-1 overflow-auto">
+                <MarkdownViewer
+                  content={
+                    viewingVersion && viewingVersion.version !== design.currentVersion
+                      ? viewingVersion.content || ""
+                      : design.content || ""
+                  }
+                  contentRef={markdownContentRef}
+                />
+              </div>
+            </div>
           )}
         </div>
 
@@ -390,6 +446,7 @@ export default function DesignViewerPage() {
           mobileOpen={commentSidebarOpen}
           onMobileClose={() => setCommentSidebarOpen(false)}
           sessionUser={sessionUser}
+          onScrollToComment={design?.type === "MARKDOWN" ? handleScrollToComment : undefined}
         />
       </div>
 
@@ -406,6 +463,21 @@ export default function DesignViewerPage() {
           }}
           onClose={() => setShowUploadVersion(false)}
         />
+      )}
+      {/* Markdown anchor comment form */}
+      {pendingAnchorLine !== null && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+          <div className="mb-1 text-center">
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+              Commenting on line {pendingAnchorLine}
+            </span>
+          </div>
+          <CommentForm
+            onSubmit={handleSubmitMarkdownComment}
+            onCancel={() => setPendingAnchorLine(null)}
+            sessionUser={sessionUser}
+          />
+        </div>
       )}
     </div>
   );

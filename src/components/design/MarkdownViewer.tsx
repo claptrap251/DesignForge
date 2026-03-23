@@ -8,6 +8,7 @@ import remarkSourceLines from "@/lib/remarkSourceLines";
 interface MarkdownViewerProps {
   content: string;
   children?: React.ReactNode;
+  contentRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 function MermaidBlock({ code }: { code: string }) {
@@ -55,10 +56,10 @@ function MermaidBlock({ code }: { code: string }) {
   );
 }
 
-export default function MarkdownViewer({ content, children }: MarkdownViewerProps) {
+export default function MarkdownViewer({ content, children, contentRef }: MarkdownViewerProps) {
   return (
     <div className="relative h-full w-full overflow-auto bg-white">
-      <div className="mx-auto max-w-full sm:max-w-2xl lg:max-w-4xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
+      <div ref={contentRef} className="mx-auto max-w-full sm:max-w-2xl lg:max-w-4xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         <article className="prose prose-gray max-w-none prose-headings:text-gray-900 prose-a:text-indigo-600 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-pre:bg-gray-900 prose-pre:text-gray-100">
           <ReactMarkdown
             remarkPlugins={[remarkGfm, remarkSourceLines]}

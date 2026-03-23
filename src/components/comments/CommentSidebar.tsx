@@ -12,6 +12,7 @@ interface CommentSidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
   sessionUser?: { id: string; name?: string; username?: string };
+  onScrollToComment?: (commentId: string) => void;
 }
 
 type FilterType = "all" | "unresolved" | "resolved";
@@ -25,6 +26,7 @@ export default function CommentSidebar({
   mobileOpen,
   onMobileClose,
   sessionUser,
+  onScrollToComment,
 }: CommentSidebarProps) {
   const [filter, setFilter] = useState<FilterType>("all");
 
@@ -105,7 +107,12 @@ export default function CommentSidebar({
                 onResolve={onResolve}
                 onReply={onReply}
                 isSelected={selectedCommentId === comment.id}
-                onClick={() => onSelectComment(comment.id)}
+                onClick={() => {
+                  onSelectComment(comment.id);
+                  if (comment.anchorLine != null && onScrollToComment) {
+                    onScrollToComment(comment.id);
+                  }
+                }}
                 sessionUser={sessionUser}
               />
             ))}
