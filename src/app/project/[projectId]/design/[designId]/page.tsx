@@ -8,6 +8,9 @@ import ImageViewer from "@/components/design/ImageViewer";
 import MarkdownViewer from "@/components/design/MarkdownViewer";
 import PinLayer from "@/components/comments/PinLayer";
 import CommentSidebar from "@/components/comments/CommentSidebar";
+import CommentForm from "@/components/comments/CommentForm";
+import LineGutter from "@/components/comments/LineGutter";
+import { computeAnchor } from "@/lib/anchor";
 import VersionHistory from "@/components/design/VersionHistory";
 import UploadNewVersion from "@/components/design/UploadNewVersion";
 
@@ -27,7 +30,14 @@ export default function DesignViewerPage() {
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [commentSidebarOpen, setCommentSidebarOpen] = useState(false);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copying" | "copied" | "error">("idle");
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const markdownContentRef = useRef<HTMLDivElement>(null);
+  const [pendingAnchorLine, setPendingAnchorLine] = useState<number | null>(null);
+
+  const sessionUser = session?.user?.id
+    ? { id: session.user.id, name: session.user.name ?? undefined, username: (session.user as any).username ?? undefined }
+    : undefined;
 
   const fetchDesign = useCallback(async () => {
     const res = await fetch(`/api/designs/${designId}`);
@@ -83,16 +93,33 @@ export default function DesignViewerPage() {
     }
   };
 
+  const handleCopyConfluence = async () => {
+    setCopyStatus("copying");
+    setShowExportMenu(false);
+    try {
+      const res = await fetch(`/api/designs/${designId}/export?format=confluence`);
+      if (!res.ok) throw new Error("Export failed");
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      setCopyStatus("copied");
+      setTimeout(() => setCopyStatus("idle"), 2000);
+    } catch {
+      setCopyStatus("error");
+      setTimeout(() => setCopyStatus("idle"), 3000);
+    }
+  };
+
   const handleAddComment = async (
     x: number,
     y: number,
     content: string,
-    authorName: string
+    authorName: string,
+    authorId?: string
   ) => {
     await fetch(`/api/designs/${designId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ xPercent: x, yPercent: y, content, authorName }),
+      body: JSON.stringify({ xPercent: x, yPercent: y, content, authorName, ...(authorId ? { authorId } : {}) }),
     });
     setIsAddMode(false);
     fetchDesign();
@@ -111,14 +138,57 @@ export default function DesignViewerPage() {
   const handleReply = async (
     commentId: string,
     content: string,
-    authorName: string
+    authorName: string,
+    authorId?: string
   ) => {
     await fetch(`/api/comments/${commentId}/replies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, authorName }),
+      body: JSON.stringify({ content, authorName, ...(authorId ? { authorId } : {}) }),
     });
     fetchDesign();
+  };
+
+  const handleAddMarkdownComment = (line: number) => {
+    setPendingAnchorLine(line);
+  };
+
+  const handleSubmitMarkdownComment = async (content: string, authorName: string, authorId?: string) => {
+    if (pendingAnchorLine === null) return;
+    const mdContent = viewingVersion?.content || design?.content || "";
+    const anchor = computeAnchor(pendingAnchorLine, mdContent);
+
+    await fetch(`/api/designs/${designId}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        anchorLine: anchor.anchorLine,
+        anchorHeading: anchor.anchorHeading,
+        anchorContext: anchor.anchorContext,
+        contextBefore: anchor.contextBefore,
+        contextAfter: anchor.contextAfter,
+        content,
+        authorName,
+        ...(authorId ? { authorId } : {}),
+      }),
+    });
+    setPendingAnchorLine(null);
+    setIsAddMode(false);
+    fetchDesign();
+  };
+
+  const handleScrollToComment = (commentId: string) => {
+    const comment = design?.comments?.find((c: any) => c.id === commentId);
+    if (!comment?.anchorLine || !markdownContentRef.current) return;
+
+    const el = markdownContentRef.current.querySelector(
+      `[data-source-line="${comment.anchorLine}"]`
+    );
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      (el as HTMLElement).classList.add("bg-yellow-100");
+      setTimeout(() => (el as HTMLElement).classList.remove("bg-yellow-100"), 1500);
+    }
   };
 
   if (loading) {
@@ -233,6 +303,17 @@ export default function DesignViewerPage() {
                   <span className="w-5 text-center text-xs font-bold text-indigo-400">C</span>
                   Confluence
                 </button>
+                <div className="border-t border-gray-100 my-1" />
+                <button
+                  onClick={handleCopyConfluence}
+                  disabled={copyStatus === "copying"}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                  </svg>
+                  {copyStatus === "copying" ? "Copying..." : "Copy Confluence"}
+                </button>
               </div>
             )}
           </div>
@@ -283,6 +364,18 @@ export default function DesignViewerPage() {
         </div>
       </div>
 
+      {/* Copy status toast */}
+      {copyStatus === "copied" && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-lg">
+          Confluence markup copied to clipboard
+        </div>
+      )}
+      {copyStatus === "error" && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-lg">
+          Failed to copy — try downloading instead
+        </div>
+      )}
+
       {/* Viewing old version banner */}
       {viewingVersion && viewingVersion.version !== design.currentVersion && (
         <div className="bg-amber-50 border-b border-amber-200 px-4 py-2 text-center text-sm text-amber-800">
@@ -311,24 +404,35 @@ export default function DesignViewerPage() {
                 onSelectComment={setSelectedCommentId}
                 onAddComment={handleAddComment}
                 isAddMode={isAddMode}
+                sessionUser={sessionUser}
               />
             </ImageViewer>
           ) : (
-            <MarkdownViewer
-              content={
-                viewingVersion && viewingVersion.version !== design.currentVersion
-                  ? viewingVersion.content || ""
-                  : design.content || ""
-              }
-            >
-              <PinLayer
+            <div className="flex h-full">
+              <LineGutter
+                markdownContent={
+                  viewingVersion && viewingVersion.version !== design.currentVersion
+                    ? viewingVersion.content || ""
+                    : design.content || ""
+                }
                 comments={design.comments || []}
                 selectedCommentId={selectedCommentId}
                 onSelectComment={setSelectedCommentId}
-                onAddComment={handleAddComment}
+                onAddComment={handleAddMarkdownComment}
                 isAddMode={isAddMode}
+                contentRef={markdownContentRef}
               />
-            </MarkdownViewer>
+              <div className="flex-1 overflow-auto">
+                <MarkdownViewer
+                  content={
+                    viewingVersion && viewingVersion.version !== design.currentVersion
+                      ? viewingVersion.content || ""
+                      : design.content || ""
+                  }
+                  contentRef={markdownContentRef}
+                />
+              </div>
+            </div>
           )}
         </div>
 
@@ -341,6 +445,8 @@ export default function DesignViewerPage() {
           onSelectComment={setSelectedCommentId}
           mobileOpen={commentSidebarOpen}
           onMobileClose={() => setCommentSidebarOpen(false)}
+          sessionUser={sessionUser}
+          onScrollToComment={design?.type === "MARKDOWN" ? handleScrollToComment : undefined}
         />
       </div>
 
@@ -357,6 +463,21 @@ export default function DesignViewerPage() {
           }}
           onClose={() => setShowUploadVersion(false)}
         />
+      )}
+      {/* Markdown anchor comment form */}
+      {pendingAnchorLine !== null && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+          <div className="mb-1 text-center">
+            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+              Commenting on line {pendingAnchorLine}
+            </span>
+          </div>
+          <CommentForm
+            onSubmit={handleSubmitMarkdownComment}
+            onCancel={() => setPendingAnchorLine(null)}
+            sessionUser={sessionUser}
+          />
+        </div>
       )}
     </div>
   );

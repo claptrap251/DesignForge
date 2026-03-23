@@ -9,7 +9,8 @@ datasource db {
 
 model User {
   id           String    @id @default(cuid())
-  email        String    @unique
+  username     String    @unique
+  email        String?
   name         String?
   passwordHash String
   createdAt    DateTime  @default(now())
@@ -74,14 +75,19 @@ model Comment {
   id        String   @id @default(cuid())
   designId  String
   design    Design   @relation(fields: [designId], references: [id], onDelete: Cascade)
-  xPercent  Float
-  yPercent  Float
+  xPercent  Float?
+  yPercent  Float?
   pinNumber Int
   content   String
   authorName String
   authorId  String?
   author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   resolved  Boolean  @default(false)
+  anchorLine    Int?
+  anchorHeading String?
+  anchorContext String?
+  contextBefore String?
+  contextAfter  String?
   replies   Reply[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

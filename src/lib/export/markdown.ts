@@ -47,7 +47,10 @@ export async function exportToMarkdown(projectId: string): Promise<string> {
         md += `#### Comments\n\n`;
         for (const comment of design.comments) {
           const status = comment.resolved ? "RESOLVED" : "OPEN";
-          md += `> **[Pin #${comment.pinNumber}]** (${status}) at position (${comment.xPercent.toFixed(1)}%, ${comment.yPercent.toFixed(1)}%)\n`;
+          const position = comment.anchorLine != null
+            ? `Line ${comment.anchorLine}`
+            : `position (${comment.xPercent?.toFixed(1) ?? '?'}%, ${comment.yPercent?.toFixed(1) ?? '?'}%)`;
+          md += `> **[Pin #${comment.pinNumber}]** (${status}) at ${position}\n`;
           md += `> **${comment.authorName}** — ${new Date(comment.createdAt).toLocaleDateString()}\n`;
           md += `> ${comment.content}\n`;
 
@@ -93,7 +96,10 @@ export async function exportDesignToMarkdown(designId: string): Promise<string> 
     md += `## Comments\n\n`;
     for (const comment of design.comments) {
       const status = comment.resolved ? "RESOLVED" : "OPEN";
-      md += `> **[Pin #${comment.pinNumber}]** (${status}) at position (${comment.xPercent.toFixed(1)}%, ${comment.yPercent.toFixed(1)}%)\n`;
+      const position = comment.anchorLine != null
+        ? `Line ${comment.anchorLine}`
+        : `position (${comment.xPercent?.toFixed(1) ?? '?'}%, ${comment.yPercent?.toFixed(1) ?? '?'}%)`;
+      md += `> **[Pin #${comment.pinNumber}]** (${status}) at ${position}\n`;
       md += `> **${comment.authorName}** — ${new Date(comment.createdAt).toLocaleDateString()}\n`;
       md += `> ${comment.content}\n`;
 

@@ -13,7 +13,6 @@ import { exportToDocx, exportDesignToDocx } from "@/lib/export/docx";
 import {
   renderMermaidToSvg,
   renderMermaidToPng,
-  markdownToHtmlWithMermaid,
   markdownToHtmlWithMermaidSvg,
   containsMermaid,
   extractMermaidBlocks,
@@ -46,32 +45,12 @@ sequenceDiagram
     expect(blocks[1]).toContain("sequenceDiagram");
   });
 
-  it("should convert mermaid blocks to renderable divs without escaping", () => {
-    const md = `Intro text
-\`\`\`mermaid
-graph TD
-    A[User] --> B[Server]
-\`\`\`
-Outro text`;
-
-    const html = markdownToHtmlWithMermaid(md);
-
-    // Mermaid content should NOT be escaped
-    expect(html).toContain('<div class="mermaid">graph TD');
-    expect(html).toContain("A[User] --> B[Server]");
-    // Should NOT contain escaped arrows in mermaid div
-    expect(html).not.toContain('<div class="mermaid">graph TD\n    A[User] --&gt;');
-
-    // Non-mermaid text SHOULD be escaped
-    expect(html).toContain('<div class="markdown-text">');
-  });
-
-  it("should handle content with no mermaid blocks", () => {
+  it("should handle content with no mermaid blocks via markdownToHtmlWithMermaidSvg", async () => {
     const md = "Just plain text\nwith multiple lines";
-    const html = markdownToHtmlWithMermaid(md);
+    const html = await markdownToHtmlWithMermaidSvg(md);
 
     expect(html).toContain("Just plain text");
-    expect(html).not.toContain("mermaid");
+    expect(html).not.toContain('<div class="mermaid">');
   });
 });
 
@@ -366,14 +345,13 @@ ${DIAGRAM_FLOWCHART}
 
 Some trailing text`;
 
-    const { html, needsFallback } = await markdownToHtmlWithMermaidSvg(md);
+    const html = await markdownToHtmlWithMermaidSvg(md);
 
-    expect(needsFallback).toBe(false);
     expect(html).toContain("<svg");
     expect(html).toContain("</svg>");
     // Raw mermaid code should not appear
     expect(html).not.toContain("flowchart TD");
-    // Surrounding text should be present (escaped)
+    // Surrounding text should be present
     expect(html).toContain("Intro");
     expect(html).toContain("trailing text");
   });
@@ -393,9 +371,8 @@ ${DIAGRAM_SEQUENCE}
 
 Text after`;
 
-    const { html, needsFallback } = await markdownToHtmlWithMermaidSvg(md);
+    const html = await markdownToHtmlWithMermaidSvg(md);
 
-    expect(needsFallback).toBe(false);
     // Should contain two SVGs
     const svgCount = (html.match(/<svg/g) || []).length;
     expect(svgCount).toBe(2);

@@ -5,9 +5,10 @@ import { useState, useEffect } from "react";
 interface CommentThreadProps {
   comment: any;
   onResolve: (id: string) => void;
-  onReply: (commentId: string, content: string, authorName: string) => void;
+  onReply: (commentId: string, content: string, authorName: string, authorId?: string) => void;
   isSelected: boolean;
   onClick: () => void;
+  sessionUser?: { id: string; name?: string; username?: string };
 }
 
 export default function CommentThread({
@@ -16,21 +17,29 @@ export default function CommentThread({
   onReply,
   isSelected,
   onClick,
+  sessionUser,
 }: CommentThreadProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyContent, setReplyContent] = useState("");
   const [replyAuthor, setReplyAuthor] = useState("");
 
   useEffect(() => {
-    const savedName = localStorage.getItem("designforge-author-name");
-    if (savedName) setReplyAuthor(savedName);
-  }, []);
+    if (!sessionUser) {
+      const savedName = localStorage.getItem("designforge-author-name");
+      if (savedName) setReplyAuthor(savedName);
+    }
+  }, [sessionUser]);
 
   const handleReplySubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyContent.trim() || !replyAuthor.trim()) return;
-    localStorage.setItem("designforge-author-name", replyAuthor.trim());
-    onReply(comment.id, replyContent.trim(), replyAuthor.trim());
+    const name = sessionUser
+      ? (sessionUser.name || sessionUser.username || "Unknown")
+      : replyAuthor.trim();
+    if (!replyContent.trim() || !name) return;
+    if (!sessionUser) {
+      localStorage.setItem("designforge-author-name", name);
+    }
+    onReply(comment.id, replyContent.trim(), name, sessionUser?.id);
     setReplyContent("");
     setShowReplyForm(false);
   };
@@ -89,6 +98,18 @@ export default function CommentThread({
 
       <p className="mt-2 text-sm text-gray-700">{comment.content}</p>
 
+      {comment.anchorLine != null && (
+        <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
+          </svg>
+          <span>Line {comment.anchorLine}</span>
+          {comment.anchorHeading && (
+            <span className="text-gray-300">· {comment.anchorHeading}</span>
+          )}
+        </div>
+      )}
+
       {comment.replies && comment.replies.length > 0 && (
         <div className="mt-3 space-y-2 border-l-2 border-gray-200 pl-3">
           {comment.replies.map((reply: any) => (
@@ -114,14 +135,16 @@ export default function CommentThread({
             onClick={(e) => e.stopPropagation()}
             className="space-y-2"
           >
-            <input
-              type="text"
-              value={replyAuthor}
-              onChange={(e) => setReplyAuthor(e.target.value)}
-              placeholder="Your name"
-              required
-              className="block w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-xs shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            />
+            {!sessionUser && (
+              <input
+                type="text"
+                value={replyAuthor}
+                onChange={(e) => setReplyAuthor(e.target.value)}
+                placeholder="Your name"
+                required
+                className="block w-full rounded-md border border-gray-300 px-2.5 py-1.5 text-xs shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            )}
             <textarea
               value={replyContent}
               onChange={(e) => setReplyContent(e.target.value)}
@@ -144,7 +167,7 @@ export default function CommentThread({
               </button>
               <button
                 type="submit"
-                disabled={!replyContent.trim() || !replyAuthor.trim()}
+                disabled={!replyContent.trim() || (!sessionUser && !replyAuthor.trim())}
                 className="rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
               >
                 Reply

@@ -8,8 +8,9 @@ interface PinLayerProps {
   comments: any[];
   selectedCommentId: string | null;
   onSelectComment: (id: string | null) => void;
-  onAddComment: (x: number, y: number, content: string, authorName: string) => void;
+  onAddComment: (x: number, y: number, content: string, authorName: string, authorId?: string) => void;
   isAddMode: boolean;
+  sessionUser?: { id: string; name?: string; username?: string };
 }
 
 export default function PinLayer({
@@ -18,6 +19,7 @@ export default function PinLayer({
   onSelectComment,
   onAddComment,
   isAddMode,
+  sessionUser,
 }: PinLayerProps) {
   const [newPinPosition, setNewPinPosition] = useState<{ x: number; y: number } | null>(null);
 
@@ -36,9 +38,9 @@ export default function PinLayer({
     [isAddMode, onSelectComment]
   );
 
-  const handleFormSubmit = (content: string, authorName: string) => {
+  const handleFormSubmit = (content: string, authorName: string, authorId?: string) => {
     if (newPinPosition) {
-      onAddComment(newPinPosition.x, newPinPosition.y, content, authorName);
+      onAddComment(newPinPosition.x, newPinPosition.y, content, authorName, authorId);
       setNewPinPosition(null);
     }
   };
@@ -83,6 +85,7 @@ export default function PinLayer({
             position={newPinPosition}
             onSubmit={handleFormSubmit}
             onCancel={handleFormCancel}
+            sessionUser={sessionUser}
           />
         </>
       )}

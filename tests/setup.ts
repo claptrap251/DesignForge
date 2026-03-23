@@ -1,3 +1,4 @@
+/// <reference types="vitest/globals" />
 import { execSync } from "child_process";
 import { rmSync, mkdirSync } from "fs";
 import path from "path";

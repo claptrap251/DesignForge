@@ -21,6 +21,7 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
   const [format, setFormat] = useState<ExportFormat>("html");
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copying" | "copied" | "error">("idle");
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -29,6 +30,21 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, [open, onClose]);
+
+  const handleCopyConfluence = async () => {
+    setCopyStatus("copying");
+    try {
+      const res = await fetch(`/api/export/${projectId}?format=confluence`);
+      if (!res.ok) throw new Error("Export failed");
+      const text = await res.text();
+      await navigator.clipboard.writeText(text);
+      setCopyStatus("copied");
+      setTimeout(() => setCopyStatus("idle"), 2000);
+    } catch {
+      setCopyStatus("error");
+      setTimeout(() => setCopyStatus("idle"), 3000);
+    }
+  };
 
   const handleExport = async () => {
     setExporting(true);
@@ -121,6 +137,28 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
           >
             Cancel
           </button>
+          {format === "confluence" && (
+            <button
+              onClick={handleCopyConfluence}
+              disabled={copyStatus === "copying"}
+              className="flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-50"
+            >
+              {copyStatus === "copied" ? (
+                "Copied!"
+              ) : copyStatus === "error" ? (
+                "Copy failed \u2014 try downloading"
+              ) : copyStatus === "copying" ? (
+                "Copying..."
+              ) : (
+                <>
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy Markup
+                </>
+              )}
+            </button>
+          )}
           <button
             onClick={handleExport}
             disabled={exporting}

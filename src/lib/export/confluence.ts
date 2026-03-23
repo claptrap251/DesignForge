@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { renderMermaidToSvg } from "./mermaid-utils";
+import { marked } from "marked";
 
 async function renderDesignContentConfluence(
   content: string,
@@ -7,7 +8,7 @@ async function renderDesignContentConfluence(
 ): Promise<string> {
   try {
     let html = "";
-    const mermaidRegex = /```mermaid\s*\n([\s\S]*?)```/g;
+    const mermaidRegex = /```mermaid\s*\n([\s\S]*?)(?:```|$)/g;
     let lastIdx = 0;
     let mermaidMatch;
     let hasParts = false;
@@ -17,32 +18,37 @@ async function renderDesignContentConfluence(
       hasParts = true;
       const before = content.slice(lastIdx, mermaidMatch.index).trim();
       if (before) {
-        html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${before}]]></ac:plain-text-body></ac:structured-macro>\n`;
+        const renderedHtml = await marked.parse(before);
+        html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[${renderedHtml}]]></ac:plain-text-body></ac:structured-macro>\n`;
       }
       const mermaidCode = mermaidMatch[1].trim();
       try {
         const svg = await renderMermaidToSvg(mermaidCode, `${prefix}-${diagramIdx++}`);
         html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[<div style="display:flex;justify-content:center;padding:16px">${svg}</div>]]></ac:plain-text-body></ac:structured-macro>\n`;
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         console.error(`Mermaid render failed for confluence diagram ${prefix}-${diagramIdx - 1}:`, err);
-        html += `<ac:structured-macro ac:name="code"><ac:parameter ac:name="language">mermaid</ac:parameter><ac:parameter ac:name="title">Diagram (render failed)</ac:parameter><ac:plain-text-body><![CDATA[${mermaidCode}]]></ac:plain-text-body></ac:structured-macro>\n`;
+        html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[<div style="background:#f3f4f6;border:1px solid #e5e7eb;padding:16px;border-radius:8px;color:#6b7280;font-style:italic">Diagram render error: ${esc(message)}</div>]]></ac:plain-text-body></ac:structured-macro>\n`;
       }
       lastIdx = mermaidMatch.index + mermaidMatch[0].length;
     }
 
     const remaining = content.slice(lastIdx).trim();
     if (remaining) {
-      html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${remaining}]]></ac:plain-text-body></ac:structured-macro>\n`;
+      const renderedHtml = await marked.parse(remaining);
+      html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[${renderedHtml}]]></ac:plain-text-body></ac:structured-macro>\n`;
     }
 
     if (!hasParts) {
-      html += `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${content}]]></ac:plain-text-body></ac:structured-macro>\n`;
+      const renderedHtml = await marked.parse(content);
+      html += `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[${renderedHtml}]]></ac:plain-text-body></ac:structured-macro>\n`;
     }
 
     return html;
   } catch (err) {
     console.error("renderDesignContentConfluence failed entirely:", err);
-    return `<ac:structured-macro ac:name="code"><ac:plain-text-body><![CDATA[${content}]]></ac:plain-text-body></ac:structured-macro>\n`;
+    const renderedHtml = await marked.parse(content);
+    return `<ac:structured-macro ac:name="html"><ac:plain-text-body><![CDATA[${renderedHtml}]]></ac:plain-text-body></ac:structured-macro>\n`;
   }
 }
 
@@ -65,7 +71,10 @@ function renderCommentsConfluence(comments: any[]): string {
     html += `<tr>`;
     html += `<td>#${comment.pinNumber}</td>`;
     html += `<td><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">${statusColor}</ac:parameter><ac:parameter ac:name="title">${status}</ac:parameter></ac:structured-macro></td>`;
-    html += `<td>(${comment.xPercent.toFixed(1)}%, ${comment.yPercent.toFixed(1)}%)</td>`;
+    const posStr = comment.anchorLine != null
+      ? `Line ${comment.anchorLine}`
+      : `(${comment.xPercent?.toFixed(1) ?? '?'}%, ${comment.yPercent?.toFixed(1) ?? '?'}%)`;
+    html += `<td>${posStr}</td>`;
     html += `<td>${esc(comment.authorName)}</td>`;
     html += `<td>${esc(comment.content)}</td>`;
     html += `<td>${repliesHtml || "—"}</td>`;
