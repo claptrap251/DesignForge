@@ -28,11 +28,13 @@ async function getPuppeteerConfigPath(): Promise<string> {
   if (puppeteerConfigPath) return puppeteerConfigPath;
   const tmpDir = await mkdtemp(path.join(os.tmpdir(), "mermaid-config-"));
   const configPath = path.join(tmpDir, "puppeteer-config.json");
-  await writeFile(
-    configPath,
-    JSON.stringify({ args: ["--no-sandbox", "--disable-setuid-sandbox"] }),
-    "utf-8"
-  );
+  const config: Record<string, unknown> = {
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  };
+  if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+    config.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+  }
+  await writeFile(configPath, JSON.stringify(config), "utf-8");
   puppeteerConfigPath = configPath;
   return configPath;
 }
