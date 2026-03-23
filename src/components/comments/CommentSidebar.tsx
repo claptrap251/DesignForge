@@ -6,11 +6,12 @@ import CommentThread from "./CommentThread";
 interface CommentSidebarProps {
   comments: any[];
   onResolve: (id: string) => void;
-  onReply: (commentId: string, content: string, authorName: string) => void;
+  onReply: (commentId: string, content: string, authorName: string, authorId?: string) => void;
   selectedCommentId: string | null;
   onSelectComment: (id: string) => void;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  sessionUser?: { id: string; name?: string; username?: string };
 }
 
 type FilterType = "all" | "unresolved" | "resolved";
@@ -23,6 +24,7 @@ export default function CommentSidebar({
   onSelectComment,
   mobileOpen,
   onMobileClose,
+  sessionUser,
 }: CommentSidebarProps) {
   const [filter, setFilter] = useState<FilterType>("all");
 
@@ -104,6 +106,7 @@ export default function CommentSidebar({
                 onReply={onReply}
                 isSelected={selectedCommentId === comment.id}
                 onClick={() => onSelectComment(comment.id)}
+                sessionUser={sessionUser}
               />
             ))}
           </div>
