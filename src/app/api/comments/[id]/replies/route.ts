@@ -7,7 +7,7 @@ export async function POST(
 ) {
   const { id } = await params;
   const body = await request.json();
-  const { content, authorName } = body;
+  const { content, authorName, authorId } = body;
 
   if (!content || !authorName) {
     return NextResponse.json(
@@ -26,6 +26,7 @@ export async function POST(
       commentId: id,
       content,
       authorName,
+      ...(authorId ? { authorId } : {}),
     },
   });
 
