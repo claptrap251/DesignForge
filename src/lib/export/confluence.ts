@@ -8,7 +8,7 @@ async function renderDesignContentConfluence(
 ): Promise<string> {
   try {
     let html = "";
-    const mermaidRegex = /```mermaid\s*\n([\s\S]*?)```/g;
+    const mermaidRegex = /```mermaid\s*\n([\s\S]*?)(?:```|$)/g;
     let lastIdx = 0;
     let mermaidMatch;
     let hasParts = false;

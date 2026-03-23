@@ -104,7 +104,8 @@ export async function renderMermaidToPng(
 export async function markdownToHtmlWithMermaidSvg(
   content: string
 ): Promise<string> {
-  const mermaidBlockRegex = /```mermaid\s*\n([\s\S]*?)```/g;
+  // Match mermaid fenced blocks — closing fence is optional (handles unclosed blocks)
+  const mermaidBlockRegex = /```mermaid\s*\n([\s\S]*?)(?:```|$)/g;
   let result = "";
   let lastIndex = 0;
   let diagramIndex = 0;
@@ -148,7 +149,7 @@ export function containsMermaid(content: string): boolean {
 /** Extract just the mermaid code blocks from markdown */
 export function extractMermaidBlocks(content: string): string[] {
   const blocks: string[] = [];
-  const regex = /```mermaid\s*\n([\s\S]*?)```/g;
+  const regex = /```mermaid\s*\n([\s\S]*?)(?:```|$)/g;
   let match;
   while ((match = regex.exec(content)) !== null) {
     blocks.push(match[1].trim());
