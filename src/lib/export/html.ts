@@ -50,7 +50,10 @@ function renderCommentsHtml(comments: any[]): string {
     html += `<div class="comment ${resolvedClass}">`;
     html += `<span class="pin-badge ${resolvedClass}">${comment.pinNumber}</span>`;
     html += `<span class="status ${statusClass}">${statusText}</span>`;
-    html += ` <span class="meta">at (${comment.xPercent.toFixed(1)}%, ${comment.yPercent.toFixed(1)}%) by <strong>${esc(comment.authorName)}</strong></span>`;
+    const posStr = comment.anchorLine != null
+      ? `Line ${comment.anchorLine}${comment.anchorHeading ? ` (${esc(comment.anchorHeading)})` : ''}`
+      : `(${comment.xPercent?.toFixed(1) ?? '?'}%, ${comment.yPercent?.toFixed(1) ?? '?'}%)`;
+    html += ` <span class="meta">at ${posStr} by <strong>${esc(comment.authorName)}</strong></span>`;
     html += `<p>${esc(comment.content)}</p>`;
 
     for (const reply of comment.replies) {

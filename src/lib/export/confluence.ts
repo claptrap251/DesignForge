@@ -71,7 +71,10 @@ function renderCommentsConfluence(comments: any[]): string {
     html += `<tr>`;
     html += `<td>#${comment.pinNumber}</td>`;
     html += `<td><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">${statusColor}</ac:parameter><ac:parameter ac:name="title">${status}</ac:parameter></ac:structured-macro></td>`;
-    html += `<td>(${comment.xPercent.toFixed(1)}%, ${comment.yPercent.toFixed(1)}%)</td>`;
+    const posStr = comment.anchorLine != null
+      ? `Line ${comment.anchorLine}`
+      : `(${comment.xPercent?.toFixed(1) ?? '?'}%, ${comment.yPercent?.toFixed(1) ?? '?'}%)`;
+    html += `<td>${posStr}</td>`;
     html += `<td>${esc(comment.authorName)}</td>`;
     html += `<td>${esc(comment.content)}</td>`;
     html += `<td>${repliesHtml || "—"}</td>`;
