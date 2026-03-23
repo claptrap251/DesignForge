@@ -66,6 +66,49 @@ export async function createTestMarkdownDesign(
   });
 }
 
+/** Create a test comment (image-style with xPercent/yPercent) */
+export async function createTestImageComment(
+  designId: string,
+  overrides: { xPercent?: number; yPercent?: number; pinNumber?: number; content?: string; authorName?: string } = {}
+) {
+  return prisma.comment.create({
+    data: {
+      designId,
+      xPercent: overrides.xPercent ?? 50.0,
+      yPercent: overrides.yPercent ?? 50.0,
+      pinNumber: overrides.pinNumber ?? 1,
+      content: overrides.content ?? "Test comment",
+      authorName: overrides.authorName ?? "Tester",
+    },
+    include: { replies: true },
+  });
+}
+
+/** Create a test comment (markdown-style with anchor fields) */
+export async function createTestAnchoredComment(
+  designId: string,
+  overrides: {
+    anchorLine?: number; anchorHeading?: string; anchorContext?: string;
+    contextBefore?: string; contextAfter?: string;
+    pinNumber?: number; content?: string; authorName?: string;
+  } = {}
+) {
+  return prisma.comment.create({
+    data: {
+      designId,
+      anchorLine: overrides.anchorLine ?? 5,
+      anchorHeading: overrides.anchorHeading ?? "## Section",
+      anchorContext: overrides.anchorContext ?? "Some content line",
+      contextBefore: overrides.contextBefore ?? "line before 1\nline before 2",
+      contextAfter: overrides.contextAfter ?? "line after 1\nline after 2",
+      pinNumber: overrides.pinNumber ?? 1,
+      content: overrides.content ?? "Test anchored comment",
+      authorName: overrides.authorName ?? "Tester",
+    },
+    include: { replies: true },
+  });
+}
+
 /** Clean all data from the test database */
 export async function cleanDb() {
   // Delete in dependency order
