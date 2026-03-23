@@ -8,15 +8,16 @@ export const prisma = new PrismaClient({
 
 /** Create a test user and return it */
 export async function createTestUser(
-  overrides: { email?: string; name?: string; password?: string } = {}
+  overrides: { username?: string; email?: string; name?: string; password?: string } = {}
 ) {
-  const email = overrides.email ?? `test-${Date.now()}@example.com`;
+  const username = overrides.username ?? `test_${Date.now()}`;
   const password = overrides.password ?? "password123";
   const passwordHash = await hash(password, 4); // Low rounds for speed
 
   return prisma.user.create({
     data: {
-      email,
+      username,
+      email: overrides.email ?? null,
       name: overrides.name ?? "Test User",
       passwordHash,
     },
