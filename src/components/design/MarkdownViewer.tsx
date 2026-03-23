@@ -3,6 +3,7 @@
 import { useEffect, useRef, useId } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkSourceLines from "@/lib/remarkSourceLines";
 
 interface MarkdownViewerProps {
   content: string;
@@ -60,7 +61,7 @@ export default function MarkdownViewer({ content, children }: MarkdownViewerProp
       <div className="mx-auto max-w-full sm:max-w-2xl lg:max-w-4xl px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         <article className="prose prose-gray max-w-none prose-headings:text-gray-900 prose-a:text-indigo-600 prose-code:rounded prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-pre:bg-gray-900 prose-pre:text-gray-100">
           <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
+            remarkPlugins={[remarkGfm, remarkSourceLines]}
             components={{
               code({ className, children: codeChildren, ...props }) {
                 const match = /language-(\w+)/.exec(className || "");
