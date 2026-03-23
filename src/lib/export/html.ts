@@ -26,27 +26,14 @@ const HTML_STYLES = `
   @media print { .mermaid svg { max-width: 100%; } }
 `;
 
-// Mermaid CDN script — only included when server-side SVG rendering fails
-const MERMAID_SCRIPT = `
-<script type="module">
-  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
-  mermaid.initialize({ startOnLoad: true, theme: 'default' });
-</script>`;
-
-function buildHtmlDocument(bodyContent: string, includeMermaidCdn: boolean): Buffer {
-  let html = `<!DOCTYPE html>
+function buildHtmlDocument(bodyContent: string): Buffer {
+  const html = `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
 <style>${HTML_STYLES}</style>
 </head>
-<body>`;
-
-  html += bodyContent;
-  if (includeMermaidCdn) {
-    html += MERMAID_SCRIPT;
-  }
-  html += `</body></html>`;
+<body>${bodyContent}</body></html>`;
   return Buffer.from(html, "utf-8");
 }
 
@@ -76,31 +63,13 @@ function renderCommentsHtml(comments: any[]): string {
   return html;
 }
 
-async function renderDesignContentHtml(content: string): Promise<{ html: string; needsFallback: boolean }> {
+async function renderDesignContentHtml(content: string): Promise<string> {
   if (!containsMermaid(content)) {
     const rendered = await marked.parse(content);
-    return { html: `<div class="markdown-content">${rendered}</div>`, needsFallback: false };
+    return `<div class="markdown-content">${rendered}</div>`;
   }
-  try {
-    const { html: rendered, needsFallback } = await markdownToHtmlWithMermaidSvg(content);
-    return { html: `<div class="markdown-content">${rendered}</div>`, needsFallback };
-  } catch (err) {
-    console.error("renderDesignContentHtml failed, falling back to CDN:", err);
-    // Fall back to client-side mermaid rendering via CDN
-    const mermaidBlockRegex = /```mermaid\s*\n([\s\S]*?)```/g;
-    let result = "";
-    let lastIndex = 0;
-    let match;
-    while ((match = mermaidBlockRegex.exec(content)) !== null) {
-      const before = content.slice(lastIndex, match.index);
-      if (before.trim()) result += `<div class="markdown-text">${await marked.parse(before)}</div>`;
-      result += `<pre class="mermaid">${match[1].trim()}</pre>`;
-      lastIndex = match.index + match[0].length;
-    }
-    const remaining = content.slice(lastIndex);
-    if (remaining.trim()) result += `<div class="markdown-text">${await marked.parse(remaining)}</div>`;
-    return { html: `<div class="markdown-content">${result}</div>`, needsFallback: true };
-  }
+  const rendered = await markdownToHtmlWithMermaidSvg(content);
+  return `<div class="markdown-content">${rendered}</div>`;
 }
 
 export async function exportToHtml(projectId: string): Promise<Buffer> {
@@ -135,8 +104,6 @@ export async function exportToHtml(projectId: string): Promise<Buffer> {
     body += `<p>${esc(project.description)}</p>`;
   }
 
-  let needsFallback = false;
-
   for (const folder of project.folders) {
     body += `<h2>${esc(folder.name)}</h2>`;
 
@@ -144,16 +111,14 @@ export async function exportToHtml(projectId: string): Promise<Buffer> {
       body += `<h3>${esc(design.name)} <span class="meta">(${design.type})</span></h3>`;
 
       if (design.type === "MARKDOWN" && design.content) {
-        const result = await renderDesignContentHtml(design.content);
-        body += result.html;
-        if (result.needsFallback) needsFallback = true;
+        body += await renderDesignContentHtml(design.content);
       }
 
       body += renderCommentsHtml(design.comments);
     }
   }
 
-  return buildHtmlDocument(body, needsFallback);
+  return buildHtmlDocument(body);
 }
 
 /** Export a single design as HTML */
@@ -175,17 +140,14 @@ export async function exportDesignToHtml(designId: string): Promise<Buffer> {
   }
 
   let body = `<h1>${esc(design.name)} <span class="meta">(${design.type})</span></h1>`;
-  let needsFallback = false;
 
   if (design.type === "MARKDOWN" && design.content) {
-    const result = await renderDesignContentHtml(design.content);
-    body += result.html;
-    needsFallback = result.needsFallback;
+    body += await renderDesignContentHtml(design.content);
   }
 
   body += renderCommentsHtml(design.comments);
 
-  return buildHtmlDocument(body, needsFallback);
+  return buildHtmlDocument(body);
 }
 
 function esc(str: string): string {

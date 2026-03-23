@@ -1,228 +1,108 @@
 /**
- * Parses markdown content and extracts mermaid code blocks,
- * returning HTML with mermaid diagram placeholders or pre-rendered SVGs.
+ * Mermaid rendering utilities using @mermaid-js/mermaid-cli (mmdc).
+ * Renders diagrams via headless Chromium for reliable SVG/PNG output.
  */
 
-import { JSDOM } from "jsdom";
+import { writeFile, readFile, rm, mkdtemp } from "fs/promises";
+import { execFile } from "child_process";
+import { promisify } from "util";
+import path from "path";
+import os from "os";
 import { marked } from "marked";
 
-// Persistent jsdom instance for mermaid rendering — mermaid is a singleton
-// that caches DOM references internally, so we must keep the same DOM alive.
-let mermaidDom: JSDOM | null = null;
-let mermaidInstance: any = null;
-let renderCounter = 0;
+const execFileAsync = promisify(execFile);
 
-function ensureMermaidDom(): JSDOM {
-  if (mermaidDom) return mermaidDom;
-
-  const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", {
-    pretendToBeVisual: true,
-    url: "http://localhost",
-  });
-
-  const win = dom.window as any;
-
-  // Stub matchMedia — mermaid uses it for theme/media queries
-  if (!win.matchMedia) {
-    win.matchMedia = (query: string) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: () => {},
-      removeListener: () => {},
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      dispatchEvent: () => false,
-    });
-  }
-
-  // Stub ResizeObserver — mermaid uses it for layout calculations
-  if (!win.ResizeObserver) {
-    win.ResizeObserver = class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    };
-  }
-
-  // Stub IntersectionObserver
-  if (!win.IntersectionObserver) {
-    win.IntersectionObserver = class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    };
-  }
-
-  // Stub SVGPathElement, SVGTextElement and other SVG classes jsdom lacks
-  const svgClassStubs = [
-    "SVGPathElement", "SVGTextElement", "SVGTSpanElement",
-    "SVGCircleElement", "SVGEllipseElement", "SVGRectElement",
-    "SVGLineElement", "SVGPolylineElement", "SVGPolygonElement",
-    "SVGGElement", "SVGDefsElement", "SVGUseElement",
-    "SVGMarkerElement", "SVGClipPathElement", "SVGForeignObjectElement",
-  ];
-  for (const cls of svgClassStubs) {
-    if (!win[cls]) {
-      win[cls] = win.SVGElement ?? class extends win.Element {};
-    }
-  }
-
-  // Patch SVG methods that jsdom doesn't implement on created elements
-  const origCreateElementNS = dom.window.document.createElementNS.bind(dom.window.document);
-  dom.window.document.createElementNS = function (ns: string, tag: string) {
-    const el = origCreateElementNS(ns, tag);
-    if (ns === "http://www.w3.org/2000/svg") {
-      const svgEl = el as unknown as Record<string, unknown>;
-      const bbox = { x: 0, y: 0, width: 100, height: 100 };
-      if (!svgEl.getBBox) svgEl.getBBox = () => bbox;
-      if (!svgEl.getTotalLength) svgEl.getTotalLength = () => 100;
-      if (!svgEl.getPointAtLength) svgEl.getPointAtLength = () => ({ x: 0, y: 0 });
-      if (!svgEl.getComputedTextLength) svgEl.getComputedTextLength = () => 50;
-      if (!svgEl.getSubStringLength) svgEl.getSubStringLength = () => 50;
-      if (!svgEl.getBoundingClientRect)
-        svgEl.getBoundingClientRect = () => ({
-          x: 0, y: 0, width: 100, height: 100,
-          top: 0, left: 0, bottom: 100, right: 100,
-          toJSON: () => ({}),
-        });
-      // Stub createSVGRect for SVGSVGElement
-      if (tag === "svg" && !svgEl.createSVGRect) {
-        svgEl.createSVGRect = () => ({ x: 0, y: 0, width: 0, height: 0 });
-      }
-      if (tag === "svg" && !svgEl.createSVGPoint) {
-        svgEl.createSVGPoint = () => ({ x: 0, y: 0, matrixTransform: () => ({ x: 0, y: 0 }) });
-      }
-    }
-    return el;
-  } as typeof dom.window.document.createElementNS;
-
-  mermaidDom = dom;
-  return dom;
+/** Resolve the mmdc binary path from @mermaid-js/mermaid-cli */
+function getMmdcPath(): string {
+  return require.resolve("@mermaid-js/mermaid-cli/src/cli.js");
 }
 
-let domGlobalsSet = false;
+const MMDC_PATH = getMmdcPath();
 
-function ensureDomGlobals(dom: JSDOM): void {
-  if (domGlobalsSet) return;
-
-  const win = dom.window as any;
-  const globalValues: Record<string, unknown> = {
-    window: win,
-    document: win.document,
-    navigator: win.navigator,
-    DOMParser: win.DOMParser,
-    XMLSerializer: win.XMLSerializer,
-    self: win,
-    Element: win.Element,
-    HTMLElement: win.HTMLElement,
-    SVGElement: win.SVGElement,
-    SVGGraphicsElement: win.SVGGraphicsElement,
-    SVGPathElement: win.SVGPathElement,
-    SVGTextElement: win.SVGTextElement,
-    SVGTSpanElement: win.SVGTSpanElement,
-    matchMedia: win.matchMedia,
-    ResizeObserver: win.ResizeObserver,
-    IntersectionObserver: win.IntersectionObserver,
-    requestAnimationFrame: win.requestAnimationFrame,
-    cancelAnimationFrame: win.cancelAnimationFrame,
-    getComputedStyle: win.getComputedStyle,
-    MutationObserver: win.MutationObserver,
-    CustomEvent: win.CustomEvent,
-    CSSStyleDeclaration: win.CSSStyleDeclaration,
-  };
-
-  for (const [key, value] of Object.entries(globalValues)) {
-    Object.defineProperty(globalThis, key, {
-      value,
-      writable: true,
-      configurable: true,
-    });
-  }
-
-  domGlobalsSet = true;
+/**
+ * Puppeteer config for Docker/CI (non-root users).
+ * Chromium requires --no-sandbox when running as non-root.
+ */
+let puppeteerConfigPath: string | null = null;
+async function getPuppeteerConfigPath(): Promise<string> {
+  if (puppeteerConfigPath) return puppeteerConfigPath;
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), "mermaid-config-"));
+  const configPath = path.join(tmpDir, "puppeteer-config.json");
+  await writeFile(
+    configPath,
+    JSON.stringify({ args: ["--no-sandbox", "--disable-setuid-sandbox"] }),
+    "utf-8"
+  );
+  puppeteerConfigPath = configPath;
+  return configPath;
 }
 
-// Promise-based mutex to serialize renders — mermaid mutates global DOM
-// state, and `await render()` yields, so concurrent requests can interleave.
-let renderLock: Promise<void> = Promise.resolve();
+/** Error placeholder HTML for failed diagram renders */
+function errorPlaceholder(message: string): string {
+  const safeMsg = message.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return `<div style="background:#f3f4f6;border:1px solid #e5e7eb;padding:16px;border-radius:8px;color:#6b7280;font-style:italic">Diagram render error: ${safeMsg}</div>`;
+}
 
-/** Render mermaid code to SVG server-side using jsdom */
-export async function renderMermaidToSvg(code: string, id: string): Promise<string> {
-  let release!: () => void;
-  const prevLock = renderLock;
-  renderLock = new Promise<void>((resolve) => { release = resolve; });
-  await prevLock;
+/** Render mermaid code to SVG using mmdc CLI */
+export async function renderMermaidToSvg(
+  code: string,
+  id: string
+): Promise<string> {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), `mermaid-${id}-`));
+  const inputFile = path.join(tmpDir, "input.mmd");
+  const outputFile = path.join(tmpDir, "output.svg");
 
   try {
-    const dom = ensureMermaidDom();
-
-    // Mermaid is a singleton that caches DOM globals (window, document, etc.)
-    // at import time.  Restoring globals between renders breaks subsequent
-    // calls, so we set them once and leave them in place.
-    ensureDomGlobals(dom);
-
-    if (!mermaidInstance) {
-      mermaidInstance = (await import("mermaid")).default;
-    }
-    mermaidInstance.initialize({ startOnLoad: false, theme: "default" });
-
-    // Use unique IDs to avoid conflicts between renders.
-    // Let mermaid manage its own DOM lifecycle — it calls
-    // removeExistingElements() internally to clean up previous renders.
-    const uniqueId = `${id}-${renderCounter++}`;
-    const { svg } = await mermaidInstance.render(uniqueId, code);
-
+    await writeFile(inputFile, code, "utf-8");
+    const configPath = await getPuppeteerConfigPath();
+    await execFileAsync(
+      "node",
+      [MMDC_PATH, "-i", inputFile, "-o", outputFile, "-e", "svg", "-p", configPath],
+      { timeout: 30000 }
+    );
+    const svg = await readFile(outputFile, "utf-8");
     return svg;
   } finally {
-    release();
+    await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }
 }
 
 /** Render mermaid code to PNG buffer for embedding in docx */
-export async function renderMermaidToPng(code: string, id: string): Promise<Buffer> {
-  const sharp = (await import("sharp")).default;
-  const svg = await renderMermaidToSvg(code, id);
+export async function renderMermaidToPng(
+  code: string,
+  id: string
+): Promise<Buffer> {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), `mermaid-png-${id}-`));
+  const inputFile = path.join(tmpDir, "input.mmd");
+  const outputFile = path.join(tmpDir, "output.png");
 
-  // Mermaid outputs width="100%" with a style containing max-width in px,
-  // plus a viewBox.  Sharp needs explicit pixel width/height to rasterize.
-  // Extract dimensions from the viewBox and scale to a reasonable output size.
-  let width = 800;
-  let height = 600;
-  const viewBoxMatch = svg.match(/viewBox="[\d.\-]+\s+[\d.\-]+\s+([\d.]+)\s+([\d.]+)"/);
-  if (viewBoxMatch) {
-    const vbWidth = parseFloat(viewBoxMatch[1]);
-    const vbHeight = parseFloat(viewBoxMatch[2]);
-    if (vbWidth > 0 && vbHeight > 0) {
-      const scale = width / vbWidth;
-      height = Math.round(vbHeight * scale);
-    }
+  try {
+    await writeFile(inputFile, code, "utf-8");
+    const configPath = await getPuppeteerConfigPath();
+    await execFileAsync(
+      "node",
+      [MMDC_PATH, "-i", inputFile, "-o", outputFile, "-e", "png", "-p", configPath],
+      { timeout: 30000 }
+    );
+    const pngBuffer = await readFile(outputFile);
+    return Buffer.from(pngBuffer);
+  } finally {
+    await rm(tmpDir, { recursive: true, force: true }).catch(() => {});
   }
-
-  // Replace width="100%" with pixel width, and inject height attribute
-  const svgFixed = svg.replace(
-    /width="100%"/,
-    `width="${width}" height="${height}"`
-  );
-
-  const pngBuffer = await sharp(Buffer.from(svgFixed)).png().toBuffer();
-  return Buffer.from(pngBuffer);
 }
 
 /**
  * Convert markdown with mermaid blocks to HTML with pre-rendered SVGs.
- * Returns { html, needsFallback } — if any diagram fails server-side rendering,
- * it is left as a raw <pre class="mermaid"> block for client-side CDN rendering
- * and needsFallback is set to true.
+ * Returns the HTML string. Individual diagram failures produce error
+ * placeholders — the function itself never throws.
  */
 export async function markdownToHtmlWithMermaidSvg(
   content: string
-): Promise<{ html: string; needsFallback: boolean }> {
+): Promise<string> {
   const mermaidBlockRegex = /```mermaid\s*\n([\s\S]*?)```/g;
   let result = "";
   let lastIndex = 0;
   let diagramIndex = 0;
-  let needsFallback = false;
 
   let match;
   while ((match = mermaidBlockRegex.exec(content)) !== null) {
@@ -233,12 +113,15 @@ export async function markdownToHtmlWithMermaidSvg(
 
     const mermaidCode = match[1].trim();
     try {
-      const svg = await renderMermaidToSvg(mermaidCode, `diagram-${diagramIndex++}`);
+      const svg = await renderMermaidToSvg(
+        mermaidCode,
+        `diagram-${diagramIndex++}`
+      );
       result += `<div class="mermaid">${svg}</div>`;
     } catch (err) {
-      console.error("Mermaid server-side render failed:", err);
-      result += `<pre class="mermaid">${mermaidCode}</pre>`;
-      needsFallback = true;
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Mermaid render failed:", message);
+      result += `<div class="mermaid">${errorPlaceholder(message)}</div>`;
     }
 
     lastIndex = match.index + match[0].length;
@@ -247,37 +130,6 @@ export async function markdownToHtmlWithMermaidSvg(
   const remaining = content.slice(lastIndex);
   if (remaining.trim()) {
     result += `<div class="markdown-text">${await marked.parse(remaining)}</div>`;
-  }
-
-  return { html: result, needsFallback };
-}
-
-/** Extract mermaid blocks from markdown, return HTML with raw mermaid divs (client-side rendering) */
-export function markdownToHtmlWithMermaid(content: string): string {
-  // Split content into segments: regular markdown and mermaid blocks
-  const mermaidBlockRegex = /```mermaid\s*\n([\s\S]*?)```/g;
-  let result = "";
-  let lastIndex = 0;
-
-  let match;
-  while ((match = mermaidBlockRegex.exec(content)) !== null) {
-    // Add the markdown before this mermaid block as rendered HTML
-    const before = content.slice(lastIndex, match.index);
-    if (before.trim()) {
-      result += `<div class="markdown-text">${marked.parse(before)}</div>`;
-    }
-
-    // Add the mermaid block as a renderable diagram (NOT escaped - mermaid parses raw text)
-    const mermaidCode = match[1].trim();
-    result += `<div class="mermaid">${mermaidCode}</div>`;
-
-    lastIndex = match.index + match[0].length;
-  }
-
-  // Add any remaining content after the last mermaid block
-  const remaining = content.slice(lastIndex);
-  if (remaining.trim()) {
-    result += `<div class="markdown-text">${marked.parse(remaining)}</div>`;
   }
 
   return result;
@@ -297,12 +149,4 @@ export function extractMermaidBlocks(content: string): string[] {
     blocks.push(match[1].trim());
   }
   return blocks;
-}
-
-function esc(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }
