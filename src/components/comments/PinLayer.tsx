@@ -14,10 +14,9 @@ interface PinLayerProps {
   sessionUser?: { id: string; name?: string; username?: string };
 }
 
-/** Extract the word/phrase near a click point using caretRangeFromPoint */
+/** Extract the word at the click point + one neighbor for uniqueness */
 function getTextAtPoint(clientX: number, clientY: number): string | null {
   try {
-    // Use caretRangeFromPoint (widely supported)
     const range = document.caretRangeFromPoint(clientX, clientY);
     if (!range || !range.startContainer || range.startContainer.nodeType !== Node.TEXT_NODE) {
       return null;
@@ -27,19 +26,18 @@ function getTextAtPoint(clientX: number, clientY: number): string | null {
     const text = textNode.textContent || "";
     const offset = range.startOffset;
 
-    // Expand to grab the full word + a few surrounding words for uniqueness
     const before = text.slice(0, offset);
     const after = text.slice(offset);
 
-    // Find word boundaries
-    const wordBeforeMatch = before.match(/(?:\S+\s+){0,3}\S*$/);
-    const wordAfterMatch = after.match(/^\S*(?:\s+\S+){0,3}/);
+    // Grab the clicked word + one word on each side
+    const wordBeforeMatch = before.match(/(?:\S+\s+)?\S*$/);
+    const wordAfterMatch = after.match(/^\S*(?:\s+\S+)?/);
 
     const snippetBefore = wordBeforeMatch ? wordBeforeMatch[0] : "";
     const snippetAfter = wordAfterMatch ? wordAfterMatch[0] : "";
     const phrase = (snippetBefore + snippetAfter).trim();
 
-    return phrase.length >= 3 ? phrase : null;
+    return phrase.length >= 2 ? phrase : null;
   } catch {
     return null;
   }
