@@ -31,20 +31,6 @@ export async function GET(
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
   }
 
-  // Auto-discard orphaned comments on read (handles old yPercent-only comments)
-  if (design.type === "MARKDOWN" && design.content) {
-    await autoDiscardComments(id, design.content);
-    // Re-fetch to get updated discard status
-    const refreshed = await prisma.design.findUnique({
-      where: { id },
-      include: {
-        comments: { orderBy: { pinNumber: "asc" }, include: { replies: { orderBy: { createdAt: "asc" } } } },
-        versions: { orderBy: { version: "desc" } },
-      },
-    });
-    return NextResponse.json(refreshed);
-  }
-
   return NextResponse.json(design);
 }
 

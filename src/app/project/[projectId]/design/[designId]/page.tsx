@@ -250,12 +250,26 @@ export default function DesignViewerPage() {
 
   const visibleComments = useMemo(() => {
     const comments = design?.comments || [];
-    if (!viewingVersion || viewingVersion.version === design?.currentVersion) {
-      // Current version: show all comments
-      return comments;
+    // Determine which content to check anchors against
+    const activeContent = viewingVersion && viewingVersion.version !== design?.currentVersion
+      ? viewingVersion.content
+      : design?.content;
+
+    const filtered = viewingVersion && viewingVersion.version !== design?.currentVersion
+      ? comments.filter((c: any) => !c.version || c.version <= viewingVersion.version)
+      : comments;
+
+    // Compute per-version discard: if anchorText doesn't exist in the viewed content
+    if (activeContent && design?.type === "MARKDOWN") {
+      return filtered.map((c: any) => {
+        if (c.anchorText) {
+          const exists = activeContent.includes(c.anchorText);
+          return { ...c, discarded: !exists };
+        }
+        return c;
+      });
     }
-    // Old version: show only comments made on that version or earlier
-    return comments.filter((c: any) => !c.version || c.version <= viewingVersion.version);
+    return filtered;
   }, [design, viewingVersion]);
 
   const handleCreateFromVersion = (version: any) => {
