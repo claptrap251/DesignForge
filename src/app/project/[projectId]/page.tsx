@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { apiUrl } from "@/lib/basePath";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
+import DesignCard from "@/components/design/DesignCard";
 import DesignGrid from "@/components/design/DesignGrid";
 import DesignUpload from "@/components/design/DesignUpload";
 import ShareDialog from "@/components/share/ShareDialog";
@@ -23,6 +24,7 @@ export default function ProjectPage() {
   const [showExport, setShowExport] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   const fetchProject = useCallback(async () => {
     const res = await fetch(apiUrl(`/api/projects/${projectId}`));
@@ -166,13 +168,90 @@ export default function ProjectPage() {
           </div>
 
           {activeFolder && activeFolderData ? (
-            <DesignGrid
-              designs={activeFolderData.designs || []}
-              folderId={activeFolder}
-              onUpload={() => setShowUpload(true)}
-              projectId={projectId}
-              onDeleteDesign={() => fetchProject()}
-            />
+            (() => {
+              const allDesigns = activeFolderData.designs || [];
+              const filtered = statusFilter
+                ? allDesigns.filter((d: any) => (d.status || "DRAFT") === statusFilter)
+                : allDesigns;
+              const sections = [
+                { key: "DRAFT", label: "Draft", color: "text-gray-500 dark:text-gray-400", dot: "bg-gray-400" },
+                { key: "IN_REVIEW", label: "In Review", color: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
+                { key: "APPROVED", label: "Approved", color: "text-green-600 dark:text-green-400", dot: "bg-green-500" },
+              ];
+              const grouped = sections.map((s) => ({
+                ...s,
+                designs: filtered.filter((d: any) => (d.status || "DRAFT") === s.key),
+              }));
+
+              return (
+                <div>
+                  {/* Status filter */}
+                  <div className="mb-4 flex items-center gap-2">
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Filter:</span>
+                    <button
+                      onClick={() => setStatusFilter(null)}
+                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                        statusFilter === null
+                          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
+                          : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                      }`}
+                    >
+                      All ({allDesigns.length})
+                    </button>
+                    {sections.map((s) => {
+                      const count = allDesigns.filter((d: any) => (d.status || "DRAFT") === s.key).length;
+                      return (
+                        <button
+                          key={s.key}
+                          onClick={() => setStatusFilter(statusFilter === s.key ? null : s.key)}
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                            statusFilter === s.key
+                              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
+                              : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                          }`}
+                        >
+                          {s.label} ({count})
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Grouped sections */}
+                  {grouped.map((section) =>
+                    section.designs.length > 0 ? (
+                      <div key={section.key} className="mb-8">
+                        <div className="mb-3 flex items-center gap-2">
+                          <span className={`h-2.5 w-2.5 rounded-full ${section.dot}`} />
+                          <h3 className={`text-sm font-semibold uppercase tracking-wider ${section.color}`}>
+                            {section.label}
+                          </h3>
+                          <span className="text-xs text-gray-400">({section.designs.length})</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                          {section.designs.map((design: any) => (
+                            <DesignCard key={design.id} design={design} projectId={projectId} onDelete={() => fetchProject()} />
+                          ))}
+                        </div>
+                      </div>
+                    ) : null
+                  )}
+
+                  {filtered.length === 0 && (
+                    <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-16">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {statusFilter ? `No ${sections.find((s) => s.key === statusFilter)?.label.toLowerCase()} designs` : "No designs yet"}
+                      </p>
+                      <button
+                        onClick={() => setShowUpload(true)}
+                        className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                      >
+                        Upload Design
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()
           ) : (
             <div className="text-center py-20 text-gray-500 dark:text-gray-400">
               Select a folder or create one to get started

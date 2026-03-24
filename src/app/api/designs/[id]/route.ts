@@ -109,15 +109,21 @@ export async function PUT(
     return NextResponse.json(updated);
   }
 
-  // Handle JSON body (name/content update - minor edit, no new version)
+  // Handle JSON body (name/content/status update - minor edit, no new version)
   const body = await request.json();
-  const { name, content } = body;
+  const { name, content, status } = body;
+
+  const validStatuses = ["DRAFT", "IN_REVIEW", "APPROVED"];
+  if (status !== undefined && !validStatuses.includes(status)) {
+    return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+  }
 
   const updated = await prisma.design.update({
     where: { id },
     data: {
       ...(name !== undefined && { name }),
       ...(content !== undefined && design.type === "MARKDOWN" && { content }),
+      ...(status !== undefined && { status }),
     },
   });
 

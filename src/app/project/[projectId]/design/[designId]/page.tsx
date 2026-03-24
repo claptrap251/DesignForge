@@ -32,7 +32,10 @@ export default function DesignViewerPage() {
   const [exporting, setExporting] = useState(false);
   const [commentSidebarOpen, setCommentSidebarOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copying" | "copied" | "error">("idle");
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
   const markdownContentRef = useRef<HTMLDivElement>(null);
   const [pendingAnchorLine, setPendingAnchorLine] = useState<number | null>(null);
 
@@ -64,6 +67,36 @@ export default function DesignViewerPage() {
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [showExportMenu]);
+
+  // Close status menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setShowStatusMenu(false);
+      }
+    };
+    if (showStatusMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showStatusMenu]);
+
+  const handleStatusChange = async (newStatus: "DRAFT" | "IN_REVIEW" | "APPROVED") => {
+    setStatusUpdating(true);
+    setShowStatusMenu(false);
+    try {
+      await fetch(apiUrl(`/api/designs/${designId}`), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      await fetchDesign();
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
 
   const handleExportDesign = async (format: "md" | "html" | "docx" | "confluence") => {
     setExporting(true);
@@ -254,6 +287,65 @@ export default function DesignViewerPage() {
           <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded hidden sm:inline">
             {design.type}
           </span>
+          {/* Status selector */}
+          <div className="relative" ref={statusMenuRef}>
+            <button
+              onClick={() => setShowStatusMenu(!showStatusMenu)}
+              disabled={statusUpdating}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition disabled:opacity-50 ${
+                design.status === "APPROVED"
+                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                  : design.status === "IN_REVIEW"
+                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300"
+                  : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+              }`}
+            >
+              {statusUpdating ? "Updating..." : design.status === "IN_REVIEW" ? "In Review" : design.status === "APPROVED" ? "Approved" : "Draft"}
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showStatusMenu && (
+              <div className="absolute left-0 top-full mt-1 w-40 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg z-30">
+                <button
+                  onClick={() => handleStatusChange("DRAFT")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <span className="inline-block h-2 w-2 rounded-full bg-gray-400" />
+                  Draft
+                  {design.status === "DRAFT" && (
+                    <svg className="ml-auto h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleStatusChange("IN_REVIEW")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+                  In Review
+                  {design.status === "IN_REVIEW" && (
+                    <svg className="ml-auto h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleStatusChange("APPROVED")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
+                  Approved
+                  {design.status === "APPROVED" && (
+                    <svg className="ml-auto h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {viewingVersion && viewingVersion.version !== design.currentVersion && (

@@ -9,6 +9,7 @@ interface DesignCardProps {
     id: string;
     name: string;
     type: string;
+    status?: string;
     filePath?: string | null;
     comments?: any[];
     _count?: { comments: number };
@@ -24,6 +25,12 @@ export default function DesignCard({ design, projectId, shareToken, onDelete }: 
   const [deleting, setDeleting] = useState(false);
   const isImage = design.type === "image";
   const commentCount = design._count?.comments ?? design.comments?.length ?? 0;
+  const statusConfig: Record<string, { label: string; cls: string }> = {
+    DRAFT: { label: "Draft", cls: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" },
+    IN_REVIEW: { label: "In Review", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
+    APPROVED: { label: "Approved", cls: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
+  };
+  const status = statusConfig[design.status || "DRAFT"] || statusConfig.DRAFT;
   const createdDate = new Date(design.createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -87,9 +94,14 @@ export default function DesignCard({ design, projectId, shareToken, onDelete }: 
       </div>
 
       <div className="p-3">
-        <h3 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-indigo-600">
-          {design.name}
-        </h3>
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-indigo-600">
+            {design.name}
+          </h3>
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.cls}`}>
+            {status.label}
+          </span>
+        </div>
         <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-400">
           <span className="flex items-center gap-1">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

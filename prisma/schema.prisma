@@ -48,6 +48,7 @@ model Design {
   id             String           @id @default(cuid())
   name           String
   type           String           // IMAGE or MARKDOWN
+  status         String           @default("DRAFT") // DRAFT, IN_REVIEW, APPROVED
   filePath       String?          // for images (current version)
   content        String?          // for markdown (current version)
   currentVersion Int              @default(1)
