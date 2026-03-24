@@ -84,6 +84,8 @@ model Comment {
   authorId  String?
   author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   resolved  Boolean  @default(false)
+  discarded Boolean  @default(false)
+  anchorText    String?  // the word/phrase this comment is anchored to
   anchorLine    Int?
   anchorHeading String?
   anchorContext String?

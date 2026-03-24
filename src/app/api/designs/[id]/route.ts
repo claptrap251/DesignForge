@@ -106,6 +106,21 @@ export async function PUT(
       },
     });
 
+    // Auto-discard comments whose anchored text was removed
+    if (newContent) {
+      const comments = await prisma.comment.findMany({
+        where: { designId: id, anchorText: { not: null } },
+      });
+      for (const comment of comments) {
+        const textExists = newContent.includes(comment.anchorText!);
+        if (!textExists && !comment.discarded) {
+          await prisma.comment.update({ where: { id: comment.id }, data: { discarded: true } });
+        } else if (textExists && comment.discarded) {
+          await prisma.comment.update({ where: { id: comment.id }, data: { discarded: false } });
+        }
+      }
+    }
+
     return NextResponse.json(updated);
   }
 
@@ -126,6 +141,21 @@ export async function PUT(
       ...(status !== undefined && { status }),
     },
   });
+
+  // Auto-discard comments whose anchored text was removed (JSON content update)
+  if (content !== undefined && design.type === "MARKDOWN") {
+    const comments = await prisma.comment.findMany({
+      where: { designId: id, anchorText: { not: null } },
+    });
+    for (const comment of comments) {
+      const textExists = (content as string).includes(comment.anchorText!);
+      if (!textExists && !comment.discarded) {
+        await prisma.comment.update({ where: { id: comment.id }, data: { discarded: true } });
+      } else if (textExists && comment.discarded) {
+        await prisma.comment.update({ where: { id: comment.id }, data: { discarded: false } });
+      }
+    }
+  }
 
   return NextResponse.json(updated);
 }

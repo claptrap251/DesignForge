@@ -32,7 +32,7 @@ export async function POST(
   const { id } = await params;
   const body = await request.json();
   const {
-    xPercent, yPercent, content, authorName, authorId,
+    xPercent, yPercent, content, authorName, authorId, anchorText,
     anchorLine, anchorHeading, anchorContext, contextBefore, contextAfter,
   } = body;
 
@@ -43,19 +43,14 @@ export async function POST(
     );
   }
 
-  // Validate: either (xPercent + yPercent) or anchorLine, not both, not neither
+  // Validate: need position, anchorLine, or anchorText
   const hasPosition = xPercent !== undefined && yPercent !== undefined;
   const hasAnchor = anchorLine !== undefined;
+  const hasTextAnchor = anchorText !== undefined && anchorText !== null;
 
-  if (!hasPosition && !hasAnchor) {
+  if (!hasPosition && !hasAnchor && !hasTextAnchor) {
     return NextResponse.json(
-      { error: "Either (xPercent + yPercent) or anchorLine is required" },
-      { status: 400 }
-    );
-  }
-  if (hasPosition && hasAnchor) {
-    return NextResponse.json(
-      { error: "Cannot provide both (xPercent + yPercent) and anchorLine" },
+      { error: "Either (xPercent + yPercent), anchorLine, or anchorText is required" },
       { status: 400 }
     );
   }
@@ -76,6 +71,7 @@ export async function POST(
       designId: id,
       xPercent: hasPosition ? xPercent : null,
       yPercent: hasPosition ? yPercent : null,
+      anchorText: hasTextAnchor ? anchorText : null,
       anchorLine: hasAnchor ? anchorLine : null,
       anchorHeading: hasAnchor ? (anchorHeading ?? null) : null,
       anchorContext: hasAnchor ? (anchorContext ?? null) : null,

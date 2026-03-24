@@ -58,9 +58,11 @@ export default function CommentThread({
   return (
     <div
       className={`cursor-pointer rounded-lg border p-3 transition-colors ${
-        isSelected
-          ? "border-indigo-300 bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-900/30"
-          : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600"
+        comment.discarded
+          ? "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-60"
+          : isSelected
+            ? "border-indigo-300 bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-900/30"
+            : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600"
       }`}
       onClick={onClick}
     >
@@ -68,7 +70,7 @@ export default function CommentThread({
         <div className="flex items-center gap-2">
           <span
             className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
-              comment.resolved ? "bg-green-500" : "bg-indigo-600"
+              comment.discarded ? "bg-gray-400" : comment.resolved ? "bg-green-500" : "bg-indigo-600"
             }`}
           >
             {comment.pinNumber}
@@ -83,23 +85,38 @@ export default function CommentThread({
           </div>
         </div>
 
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onResolve(comment.id);
-          }}
-          className={`shrink-0 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-            comment.resolved
-              ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50"
-              : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-          }`}
-          title={comment.resolved ? "Unresolve" : "Resolve"}
-        >
+        {comment.discarded ? (
+          <span className="shrink-0 rounded-md px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+            Discarded
+          </span>
+        ) : (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onResolve(comment.id);
+            }}
+            className={`shrink-0 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+              comment.resolved
+                ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50"
+                : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            }`}
+            title={comment.resolved ? "Unresolve" : "Resolve"}
+          >
           {comment.resolved ? "Resolved" : "Resolve"}
         </button>
+        )}
       </div>
 
-      <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{comment.content}</p>
+      <p className={`mt-2 text-sm ${comment.discarded ? "text-gray-400 dark:text-gray-500 line-through" : "text-gray-700 dark:text-gray-300"}`}>{comment.content}</p>
+
+      {comment.anchorText && (
+        <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-3.03a4.5 4.5 0 00-6.364-6.364L4.757 8.25a4.5 4.5 0 003.182 7.431" />
+          </svg>
+          <span className="truncate max-w-[180px]">&quot;{comment.anchorText}&quot;</span>
+        </div>
+      )}
 
       {comment.anchorLine != null && (
         <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
