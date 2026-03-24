@@ -10,7 +10,6 @@ import DesignCard from "@/components/design/DesignCard";
 import DesignGrid from "@/components/design/DesignGrid";
 import DesignUpload from "@/components/design/DesignUpload";
 import ShareDialog from "@/components/share/ShareDialog";
-import ExportDialog from "@/components/export/ExportDialog";
 
 export default function ProjectPage() {
   const { data: session } = useSession();
@@ -21,7 +20,6 @@ export default function ProjectPage() {
   const [activeFolder, setActiveFolder] = useState<string | null>(null);
   const [showUpload, setShowUpload] = useState(false);
   const [showShare, setShowShare] = useState(false);
-  const [showExport, setShowExport] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -144,15 +142,6 @@ export default function ProjectPage() {
                 </svg>
                 <span className="hidden sm:inline">Share</span>
               </button>
-              <button
-                onClick={() => setShowExport(true)}
-                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center gap-1"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span className="hidden sm:inline">Export</span>
-              </button>
               {activeFolder && (
                 <button
                   onClick={() => setShowUpload(true)}
@@ -274,11 +263,6 @@ export default function ProjectPage() {
         projectId={projectId}
         open={showShare}
         onClose={() => setShowShare(false)}
-      />
-      <ExportDialog
-        projectId={projectId}
-        open={showExport}
-        onClose={() => setShowExport(false)}
       />
     </div>
   );
