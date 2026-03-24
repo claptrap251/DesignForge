@@ -109,32 +109,80 @@ function renderCommentsConfluence(comments: any[], designContent?: string | null
   // Build a heading map from markdown content for context
   const headingAtLine = buildHeadingMap(designContent);
 
+  const openCount = comments.filter((c: any) => !c.resolved).length;
+  const resolvedCount = comments.filter((c: any) => c.resolved).length;
+
   let html = `<h4>Review Comments</h4>\n`;
-  html += `<table><thead><tr><th>Pin</th><th>Status</th><th>Section</th><th>Author</th><th>Comment</th><th>Replies</th></tr></thead><tbody>\n`;
+  html += `<p><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">#DE350B</ac:parameter><ac:parameter ac:name="title">${openCount} Open</ac:parameter></ac:structured-macro> `;
+  html += `<ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">#00875A</ac:parameter><ac:parameter ac:name="title">${resolvedCount} Resolved</ac:parameter></ac:structured-macro></p>\n`;
 
   for (const comment of comments) {
     const status = comment.resolved ? "Resolved" : "Open";
     const statusColor = comment.resolved ? "#00875A" : "#DE350B";
-    const repliesHtml = comment.replies
-      .map(
-        (r: any) =>
-          `<p><strong>${esc(r.authorName)}</strong>: ${esc(r.content)}</p>`
-      )
-      .join("");
-
-    html += `<tr>`;
-    html += `<td>#${comment.pinNumber}</td>`;
-    html += `<td><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">${statusColor}</ac:parameter><ac:parameter ac:name="title">${status}</ac:parameter></ac:structured-macro></td>`;
+    const date = new Date(comment.createdAt).toLocaleDateString("en-US", {
+      month: "short", day: "numeric", year: "numeric",
+    });
     const section = getCommentSection(comment, headingAtLine, designContent);
-    html += `<td>${section}</td>`;
-    html += `<td>${esc(comment.authorName)}</td>`;
-    html += `<td>${esc(comment.content)}</td>`;
-    html += `<td>${repliesHtml || "—"}</td>`;
-    html += `</tr>\n`;
+    const contextSnippet = getContextSnippet(comment, designContent);
+
+    html += `<ac:structured-macro ac:name="expand"><ac:parameter ac:name="title">`;
+    html += `#${comment.pinNumber} — ${esc(comment.content.length > 80 ? comment.content.slice(0, 77) + "..." : comment.content)}`;
+    html += `</ac:parameter><ac:rich-text-body>\n`;
+
+    html += `<table><tbody>\n`;
+    html += `<tr><td><strong>Status</strong></td><td><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">${statusColor}</ac:parameter><ac:parameter ac:name="title">${status}</ac:parameter></ac:structured-macro></td></tr>\n`;
+    html += `<tr><td><strong>Author</strong></td><td>${esc(comment.authorName)}</td></tr>\n`;
+    html += `<tr><td><strong>Date</strong></td><td>${date}</td></tr>\n`;
+    html += `<tr><td><strong>Section</strong></td><td>${section}</td></tr>\n`;
+    if (contextSnippet) {
+      html += `<tr><td><strong>Context</strong></td><td><em>${esc(contextSnippet)}</em></td></tr>\n`;
+    }
+    html += `<tr><td><strong>Comment</strong></td><td>${esc(comment.content)}</td></tr>\n`;
+    html += `</tbody></table>\n`;
+
+    if (comment.replies && comment.replies.length > 0) {
+      html += `<h5>Replies (${comment.replies.length})</h5>\n`;
+      for (const reply of comment.replies) {
+        const replyDate = new Date(reply.createdAt).toLocaleDateString("en-US", {
+          month: "short", day: "numeric",
+        });
+        html += `<blockquote><p><strong>${esc(reply.authorName)}</strong> <em>(${replyDate})</em></p><p>${esc(reply.content)}</p></blockquote>\n`;
+      }
+    }
+
+    html += `</ac:rich-text-body></ac:structured-macro>\n`;
   }
 
-  html += `</tbody></table>\n`;
   return html;
+}
+
+/** Get a text snippet near the comment's position for context */
+function getContextSnippet(comment: any, designContent?: string | null): string | null {
+  if (!designContent) return null;
+  const lines = designContent.split("\n");
+  const totalLines = lines.length;
+  if (totalLines === 0) return null;
+
+  let lineIdx: number;
+  if (comment.anchorLine != null) {
+    lineIdx = comment.anchorLine - 1;
+  } else if (comment.yPercent != null) {
+    lineIdx = Math.max(0, Math.round((comment.yPercent / 100) * totalLines) - 1);
+  } else {
+    return null;
+  }
+
+  // Grab 2 lines around the estimated position, skip headings/blanks
+  const snippetLines: string[] = [];
+  for (let i = Math.max(0, lineIdx - 1); i <= Math.min(totalLines - 1, lineIdx + 1); i++) {
+    const line = lines[i].trim();
+    if (line && !line.startsWith("#") && !line.startsWith("```")) {
+      snippetLines.push(line);
+    }
+  }
+  if (snippetLines.length === 0) return null;
+  const snippet = snippetLines.join(" ").trim();
+  return snippet.length > 120 ? snippet.slice(0, 117) + "..." : snippet;
 }
 
 /** Build a map of line numbers to the most recent heading above that line */
