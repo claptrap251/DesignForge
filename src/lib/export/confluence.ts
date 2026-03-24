@@ -172,9 +172,9 @@ function getContextSnippet(comment: any, designContent?: string | null): string 
     return null;
   }
 
-  // Grab 2 lines around the estimated position, skip headings/blanks
+  // Grab 5 lines around the estimated position, skip headings/blanks/fences
   const snippetLines: string[] = [];
-  for (let i = Math.max(0, lineIdx - 1); i <= Math.min(totalLines - 1, lineIdx + 1); i++) {
+  for (let i = Math.max(0, lineIdx - 3); i <= Math.min(totalLines - 1, lineIdx + 3); i++) {
     const line = lines[i].trim();
     if (line && !line.startsWith("#") && !line.startsWith("```")) {
       snippetLines.push(line);
@@ -182,7 +182,7 @@ function getContextSnippet(comment: any, designContent?: string | null): string 
   }
   if (snippetLines.length === 0) return null;
   const snippet = snippetLines.join(" ").trim();
-  return snippet.length > 120 ? snippet.slice(0, 117) + "..." : snippet;
+  return snippet.length > 300 ? snippet.slice(0, 297) + "..." : snippet;
 }
 
 /** Build a map of line numbers to the most recent heading above that line */
