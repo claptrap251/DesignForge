@@ -5,6 +5,7 @@ interface CommentPinProps {
     xPercent: number | null;
     yPercent: number | null;
     resolved: boolean;
+    discarded?: boolean;
     content: string;
   };
   isSelected: boolean;
@@ -14,11 +15,13 @@ interface CommentPinProps {
 export default function CommentPin({ pin, isSelected, onClick }: CommentPinProps) {
   if (pin.xPercent == null || pin.yPercent == null) return null;
 
-  const bgColor = isSelected
-    ? "bg-red-500 ring-2 ring-red-300"
-    : pin.resolved
-      ? "bg-green-500"
-      : "bg-indigo-600";
+  const bgColor = pin.discarded
+    ? "bg-gray-400 line-through"
+    : isSelected
+      ? "bg-red-500 ring-2 ring-red-300"
+      : pin.resolved
+        ? "bg-green-500"
+        : "bg-indigo-600";
 
   return (
     <div

@@ -147,10 +147,10 @@ export default function MarkdownViewer({
 
   return (
     <div className="h-full w-full overflow-auto bg-white dark:bg-gray-900">
-      <div className="relative min-h-full">
+      <div className="relative min-h-full mx-auto w-[900px] max-w-full">
         <div
           ref={contentRef}
-          className={`mx-auto max-w-full lg:max-w-5xl px-6 sm:px-10 lg:px-16 py-8 sm:py-12 ${
+          className={`px-16 py-12 ${
             isAddMode ? "cursor-crosshair" : "cursor-text select-text"
           }`}
           onClick={handleContentClick}

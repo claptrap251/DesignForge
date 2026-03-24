@@ -59,12 +59,14 @@ export default function SharedDesignViewerPage() {
     x: number,
     y: number,
     content: string,
-    authorName: string
+    authorName: string,
+    authorId?: string,
+    anchorText?: string
   ) => {
     await fetch(apiUrl(`/api/designs/${designId}/comments`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ xPercent: x, yPercent: y, content, authorName }),
+      body: JSON.stringify({ xPercent: x, yPercent: y, content, authorName, ...(anchorText ? { anchorText } : {}) }),
     });
     setIsAddMode(false);
     fetchDesign();
@@ -194,6 +196,7 @@ export default function SharedDesignViewerPage() {
                 onSelectComment={setSelectedCommentId}
                 onAddComment={handleAddComment}
                 isAddMode={isAddMode}
+                isMarkdown={true}
               />
             </MarkdownViewer>
           )}

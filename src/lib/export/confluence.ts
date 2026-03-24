@@ -109,31 +109,107 @@ function renderCommentsConfluence(comments: any[], designContent?: string | null
   // Build a heading map from markdown content for context
   const headingAtLine = buildHeadingMap(designContent);
 
+  const openCount = comments.filter((c: any) => !c.resolved).length;
+  const resolvedCount = comments.filter((c: any) => c.resolved).length;
+
   let html = `<h4>Review Comments</h4>\n`;
-  html += `<table><thead><tr><th>Pin</th><th>Status</th><th>Section</th><th>Author</th><th>Comment</th><th>Replies</th></tr></thead><tbody>\n`;
+  html += `<p><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">#DE350B</ac:parameter><ac:parameter ac:name="title">${openCount} Open</ac:parameter></ac:structured-macro> `;
+  html += `<ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">#00875A</ac:parameter><ac:parameter ac:name="title">${resolvedCount} Resolved</ac:parameter></ac:structured-macro></p>\n`;
 
   for (const comment of comments) {
     const status = comment.resolved ? "Resolved" : "Open";
     const statusColor = comment.resolved ? "#00875A" : "#DE350B";
-    const repliesHtml = comment.replies
-      .map(
-        (r: any) =>
-          `<p><strong>${esc(r.authorName)}</strong>: ${esc(r.content)}</p>`
-      )
-      .join("");
-
-    html += `<tr>`;
-    html += `<td>#${comment.pinNumber}</td>`;
-    html += `<td><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">${statusColor}</ac:parameter><ac:parameter ac:name="title">${status}</ac:parameter></ac:structured-macro></td>`;
+    const date = new Date(comment.createdAt).toLocaleDateString("en-US", {
+      month: "short", day: "numeric", year: "numeric",
+    });
     const section = getCommentSection(comment, headingAtLine, designContent);
-    html += `<td>${section}</td>`;
-    html += `<td>${esc(comment.authorName)}</td>`;
-    html += `<td>${esc(comment.content)}</td>`;
-    html += `<td>${repliesHtml || "—"}</td>`;
-    html += `</tr>\n`;
+    const contextSnippet = getContextSnippet(comment, designContent);
+
+    html += `<ac:structured-macro ac:name="expand"><ac:parameter ac:name="title">`;
+    html += `#${comment.pinNumber} — ${esc(comment.content.length > 80 ? comment.content.slice(0, 77) + "..." : comment.content)}`;
+    html += `</ac:parameter><ac:rich-text-body>\n`;
+
+    html += `<table><tbody>\n`;
+    html += `<tr><td><strong>Status</strong></td><td><ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">${statusColor}</ac:parameter><ac:parameter ac:name="title">${status}</ac:parameter></ac:structured-macro></td></tr>\n`;
+    html += `<tr><td><strong>Author</strong></td><td>${esc(comment.authorName)}</td></tr>\n`;
+    html += `<tr><td><strong>Date</strong></td><td>${date}</td></tr>\n`;
+    html += `<tr><td><strong>Section</strong></td><td>${section}</td></tr>\n`;
+    if (contextSnippet) {
+      html += `<tr><td><strong>Context</strong></td><td>${contextSnippet}</td></tr>\n`;
+    }
+    html += `<tr><td><strong>Comment</strong></td><td>${esc(comment.content)}</td></tr>\n`;
+    html += `</tbody></table>\n`;
+
+    if (comment.replies && comment.replies.length > 0) {
+      html += `<h5>Replies (${comment.replies.length})</h5>\n`;
+      for (const reply of comment.replies) {
+        const replyDate = new Date(reply.createdAt).toLocaleDateString("en-US", {
+          month: "short", day: "numeric",
+        });
+        html += `<blockquote><p><strong>${esc(reply.authorName)}</strong> <em>(${replyDate})</em></p><p>${esc(reply.content)}</p></blockquote>\n`;
+      }
+    }
+
+    html += `</ac:rich-text-body></ac:structured-macro>\n`;
   }
 
-  html += `</tbody></table>\n`;
+  return html;
+}
+
+/** Get a formatted context snippet near the comment's position */
+function getContextSnippet(comment: any, designContent?: string | null): string | null {
+  if (!designContent) return null;
+  const lines = designContent.split("\n");
+  const totalLines = lines.length;
+  if (totalLines === 0) return null;
+
+  let lineIdx: number;
+  if (comment.anchorLine != null) {
+    lineIdx = comment.anchorLine - 1;
+  } else if (comment.yPercent != null) {
+    lineIdx = Math.max(0, Math.round((comment.yPercent / 100) * totalLines) - 1);
+  } else {
+    return null;
+  }
+
+  // Build a set of line indices that are inside code fences
+  const inCodeFence = new Set<number>();
+  let insideFence = false;
+  for (let i = 0; i < totalLines; i++) {
+    if (lines[i].trim().startsWith("```")) {
+      insideFence = !insideFence;
+      inCodeFence.add(i);
+    } else if (insideFence) {
+      inCodeFence.add(i);
+    }
+  }
+
+  // Grab up to 5 content lines around the position, skipping code fences and blanks
+  const contextLines: { num: number; text: string; isTarget: boolean }[] = [];
+  const radius = 4;
+  for (let i = Math.max(0, lineIdx - radius); i <= Math.min(totalLines - 1, lineIdx + radius); i++) {
+    if (inCodeFence.has(i)) continue;
+    const text = lines[i].trim();
+    if (!text) continue;
+    contextLines.push({ num: i + 1, text, isTarget: i === lineIdx });
+    if (contextLines.length >= 7) break;
+  }
+
+  if (contextLines.length === 0) return null;
+
+  // Render as a Confluence panel with colored line numbers
+  let html = `<ac:structured-macro ac:name="panel"><ac:parameter ac:name="borderStyle">dashed</ac:parameter><ac:parameter ac:name="borderColor">#ccc</ac:parameter><ac:rich-text-body>`;
+  for (const cl of contextLines) {
+    const lineNum = `<strong style="color:#6366f1;font-family:monospace;font-size:11px;">${String(cl.num).padStart(4, "\u00A0")}</strong>`;
+    const textColor = cl.isTarget ? "#b91c1c" : "#374151";
+    const weight = cl.isTarget ? "font-weight:bold;" : "";
+    const arrow = cl.isTarget ? `<span style="color:#b91c1c;"> &#9664;</span>` : "";
+    const lineText = cl.text.startsWith("#")
+      ? `<strong style="color:${textColor};${weight}">${esc(cl.text)}</strong>`
+      : `<span style="color:${textColor};${weight}">${esc(cl.text.length > 120 ? cl.text.slice(0, 117) + "..." : cl.text)}</span>`;
+    html += `<p style="margin:2px 0;line-height:1.4;font-size:12px;">${lineNum} ${lineText}${arrow}</p>\n`;
+  }
+  html += `</ac:rich-text-body></ac:structured-macro>`;
   return html;
 }
 

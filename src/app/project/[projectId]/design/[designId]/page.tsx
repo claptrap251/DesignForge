@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiUrl } from "@/lib/basePath";
 import Header from "@/components/layout/Header";
@@ -27,12 +27,16 @@ export default function DesignViewerPage() {
   const [isAddMode, setIsAddMode] = useState(false);
   const [showUploadVersion, setShowUploadVersion] = useState(false);
   const [viewingVersion, setViewingVersion] = useState<any>(null);
+  const [baseVersionContent, setBaseVersionContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [commentSidebarOpen, setCommentSidebarOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copying" | "copied" | "error">("idle");
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [statusUpdating, setStatusUpdating] = useState(false);
   const exportMenuRef = useRef<HTMLDivElement>(null);
+  const statusMenuRef = useRef<HTMLDivElement>(null);
   const markdownContentRef = useRef<HTMLDivElement>(null);
   const [pendingAnchorLine, setPendingAnchorLine] = useState<number | null>(null);
 
@@ -64,6 +68,36 @@ export default function DesignViewerPage() {
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [showExportMenu]);
+
+  // Close status menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (statusMenuRef.current && !statusMenuRef.current.contains(e.target as Node)) {
+        setShowStatusMenu(false);
+      }
+    };
+    if (showStatusMenu) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showStatusMenu]);
+
+  const handleStatusChange = async (newStatus: "DRAFT" | "IN_REVIEW" | "APPROVED") => {
+    setStatusUpdating(true);
+    setShowStatusMenu(false);
+    try {
+      await fetch(apiUrl(`/api/designs/${designId}`), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      await fetchDesign();
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
 
   const handleExportDesign = async (format: "md" | "html" | "docx" | "confluence") => {
     setExporting(true);
@@ -113,12 +147,13 @@ export default function DesignViewerPage() {
     y: number,
     content: string,
     authorName: string,
-    authorId?: string
+    authorId?: string,
+    anchorText?: string
   ) => {
     await fetch(apiUrl(`/api/designs/${designId}/comments`), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ xPercent: x, yPercent: y, content, authorName, ...(authorId ? { authorId } : {}) }),
+      body: JSON.stringify({ xPercent: x, yPercent: y, content, authorName, ...(authorId ? { authorId } : {}), ...(anchorText ? { anchorText } : {}) }),
     });
     setIsAddMode(false);
     fetchDesign();
@@ -213,6 +248,37 @@ export default function DesignViewerPage() {
     }
   };
 
+  const visibleComments = useMemo(() => {
+    const comments = design?.comments || [];
+    // Determine which content to check anchors against
+    const activeContent = viewingVersion && viewingVersion.version !== design?.currentVersion
+      ? viewingVersion.content
+      : design?.content;
+
+    const filtered = viewingVersion && viewingVersion.version !== design?.currentVersion
+      ? comments.filter((c: any) => !c.version || c.version <= viewingVersion.version)
+      : comments;
+
+    // Compute per-version discard: if anchorText doesn't exist in the viewed content
+    if (activeContent && design?.type === "MARKDOWN") {
+      return filtered.map((c: any) => {
+        if (c.anchorText) {
+          const exists = activeContent.includes(c.anchorText);
+          return { ...c, discarded: !exists };
+        }
+        return c;
+      });
+    }
+    return filtered;
+  }, [design, viewingVersion]);
+
+  const handleCreateFromVersion = (version: any) => {
+    if (design.type === "MARKDOWN" && version.content) {
+      setBaseVersionContent(version.content);
+    }
+    setShowUploadVersion(true);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -254,6 +320,65 @@ export default function DesignViewerPage() {
           <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded hidden sm:inline">
             {design.type}
           </span>
+          {/* Status selector */}
+          <div className="relative" ref={statusMenuRef}>
+            <button
+              onClick={() => setShowStatusMenu(!showStatusMenu)}
+              disabled={statusUpdating}
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition disabled:opacity-50 ${
+                design.status === "APPROVED"
+                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+                  : design.status === "IN_REVIEW"
+                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300"
+                  : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+              }`}
+            >
+              {statusUpdating ? "Updating..." : design.status === "IN_REVIEW" ? "In Review" : design.status === "APPROVED" ? "Approved" : "Draft"}
+              <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+            {showStatusMenu && (
+              <div className="absolute left-0 top-full mt-1 w-40 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg z-30">
+                <button
+                  onClick={() => handleStatusChange("DRAFT")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <span className="inline-block h-2 w-2 rounded-full bg-gray-400" />
+                  Draft
+                  {design.status === "DRAFT" && (
+                    <svg className="ml-auto h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleStatusChange("IN_REVIEW")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+                  In Review
+                  {design.status === "IN_REVIEW" && (
+                    <svg className="ml-auto h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+                <button
+                  onClick={() => handleStatusChange("APPROVED")}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
+                  Approved
+                  {design.status === "APPROVED" && (
+                    <svg className="ml-auto h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {viewingVersion && viewingVersion.version !== design.currentVersion && (
@@ -278,6 +403,7 @@ export default function DesignViewerPage() {
                 setViewingVersion(version);
               }
             }}
+            onCreateFromVersion={handleCreateFromVersion}
           />
           <div className="relative" ref={exportMenuRef}>
             <button
@@ -381,7 +507,7 @@ export default function DesignViewerPage() {
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
             </svg>
-            <span className="text-xs font-medium">{design.comments?.length || 0}</span>
+            <span className="text-xs font-medium">{visibleComments.length}</span>
           </button>
         </div>
       </div>
@@ -421,7 +547,7 @@ export default function DesignViewerPage() {
               }
             >
               <PinLayer
-                comments={design.comments || []}
+                comments={visibleComments}
                 selectedCommentId={selectedCommentId}
                 onSelectComment={setSelectedCommentId}
                 onAddComment={handleAddComment}
@@ -438,11 +564,12 @@ export default function DesignViewerPage() {
               }
             >
               <PinLayer
-                comments={design.comments || []}
+                comments={visibleComments}
                 selectedCommentId={selectedCommentId}
                 onSelectComment={setSelectedCommentId}
                 onAddComment={handleAddComment}
                 isAddMode={isAddMode}
+                isMarkdown={true}
                 sessionUser={sessionUser}
               />
             </MarkdownViewer>
@@ -451,7 +578,7 @@ export default function DesignViewerPage() {
 
         {/* Comment sidebar */}
         <CommentSidebar
-          comments={design.comments || []}
+          comments={visibleComments}
           onResolve={handleResolve}
           onReply={handleReply}
           onDelete={handleDeleteComment}
@@ -469,13 +596,17 @@ export default function DesignViewerPage() {
         <UploadNewVersion
           designId={designId}
           designType={design.type}
-          currentContent={design.type === "MARKDOWN" ? design.content : null}
+          currentContent={design.type === "MARKDOWN" ? (baseVersionContent || design.content) : null}
           onComplete={() => {
             setShowUploadVersion(false);
+            setBaseVersionContent(null);
             setViewingVersion(null);
             fetchDesign();
           }}
-          onClose={() => setShowUploadVersion(false)}
+          onClose={() => {
+            setShowUploadVersion(false);
+            setBaseVersionContent(null);
+          }}
         />
       )}
       {/* Markdown anchor comment form */}
