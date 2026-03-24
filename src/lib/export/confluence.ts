@@ -135,7 +135,7 @@ function renderCommentsConfluence(comments: any[], designContent?: string | null
     html += `<tr><td><strong>Date</strong></td><td>${date}</td></tr>\n`;
     html += `<tr><td><strong>Section</strong></td><td>${section}</td></tr>\n`;
     if (contextSnippet) {
-      html += `<tr><td><strong>Context</strong></td><td><em>${esc(contextSnippet)}</em></td></tr>\n`;
+      html += `<tr><td><strong>Context</strong></td><td>${contextSnippet}</td></tr>\n`;
     }
     html += `<tr><td><strong>Comment</strong></td><td>${esc(comment.content)}</td></tr>\n`;
     html += `</tbody></table>\n`;
@@ -156,7 +156,7 @@ function renderCommentsConfluence(comments: any[], designContent?: string | null
   return html;
 }
 
-/** Get a text snippet near the comment's position for context */
+/** Get a formatted context snippet near the comment's position */
 function getContextSnippet(comment: any, designContent?: string | null): string | null {
   if (!designContent) return null;
   const lines = designContent.split("\n");
@@ -172,17 +172,45 @@ function getContextSnippet(comment: any, designContent?: string | null): string 
     return null;
   }
 
-  // Grab 5 lines around the estimated position, skip headings/blanks/fences
-  const snippetLines: string[] = [];
-  for (let i = Math.max(0, lineIdx - 3); i <= Math.min(totalLines - 1, lineIdx + 3); i++) {
-    const line = lines[i].trim();
-    if (line && !line.startsWith("#") && !line.startsWith("```")) {
-      snippetLines.push(line);
+  // Build a set of line indices that are inside code fences
+  const inCodeFence = new Set<number>();
+  let insideFence = false;
+  for (let i = 0; i < totalLines; i++) {
+    if (lines[i].trim().startsWith("```")) {
+      insideFence = !insideFence;
+      inCodeFence.add(i);
+    } else if (insideFence) {
+      inCodeFence.add(i);
     }
   }
-  if (snippetLines.length === 0) return null;
-  const snippet = snippetLines.join(" ").trim();
-  return snippet.length > 300 ? snippet.slice(0, 297) + "..." : snippet;
+
+  // Grab up to 5 content lines around the position, skipping code fences and blanks
+  const contextLines: { num: number; text: string; isTarget: boolean }[] = [];
+  const radius = 4;
+  for (let i = Math.max(0, lineIdx - radius); i <= Math.min(totalLines - 1, lineIdx + radius); i++) {
+    if (inCodeFence.has(i)) continue;
+    const text = lines[i].trim();
+    if (!text) continue;
+    contextLines.push({ num: i + 1, text, isTarget: i === lineIdx });
+    if (contextLines.length >= 7) break;
+  }
+
+  if (contextLines.length === 0) return null;
+
+  // Render as a Confluence panel with colored line numbers
+  let html = `<ac:structured-macro ac:name="panel"><ac:parameter ac:name="borderStyle">dashed</ac:parameter><ac:parameter ac:name="borderColor">#ccc</ac:parameter><ac:rich-text-body>`;
+  for (const cl of contextLines) {
+    const lineNum = `<strong style="color:#6366f1;font-family:monospace;font-size:11px;">${String(cl.num).padStart(4, "\u00A0")}</strong>`;
+    const textColor = cl.isTarget ? "#b91c1c" : "#374151";
+    const weight = cl.isTarget ? "font-weight:bold;" : "";
+    const arrow = cl.isTarget ? `<span style="color:#b91c1c;"> &#9664;</span>` : "";
+    const lineText = cl.text.startsWith("#")
+      ? `<strong style="color:${textColor};${weight}">${esc(cl.text)}</strong>`
+      : `<span style="color:${textColor};${weight}">${esc(cl.text.length > 120 ? cl.text.slice(0, 117) + "..." : cl.text)}</span>`;
+    html += `<p style="margin:2px 0;line-height:1.4;font-size:12px;">${lineNum} ${lineText}${arrow}</p>\n`;
+  }
+  html += `</ac:rich-text-body></ac:structured-macro>`;
+  return html;
 }
 
 /** Build a map of line numbers to the most recent heading above that line */
