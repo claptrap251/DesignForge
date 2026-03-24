@@ -85,6 +85,7 @@ model Comment {
   author    User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
   resolved  Boolean  @default(false)
   discarded Boolean  @default(false)
+  version   Int?     // the design version this comment was made on
   anchorText    String?  // the word/phrase this comment is anchored to
   anchorLine    Int?
   anchorHeading String?

@@ -80,6 +80,7 @@ export async function POST(
       pinNumber,
       content,
       authorName,
+      version: design.currentVersion,
       ...(authorId ? { authorId } : {}),
     },
     include: { replies: true },
