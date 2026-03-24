@@ -30,10 +30,14 @@ export default function PinLayer({
         return;
       }
 
-      const rect = e.currentTarget.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 100;
-      const y = ((e.clientY - rect.top) / rect.height) * 100;
-      setNewPinPosition({ x, y });
+      const el = e.currentTarget;
+      const rect = el.getBoundingClientRect();
+      // Use offsetWidth/offsetHeight for zoom-independent sizing
+      const scaleX = el.offsetWidth / rect.width;
+      const scaleY = el.offsetHeight / rect.height;
+      const x = ((e.clientX - rect.left) * scaleX / el.offsetWidth) * 100;
+      const y = ((e.clientY - rect.top) * scaleY / el.offsetHeight) * 100;
+      setNewPinPosition({ x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) });
     },
     [isAddMode, onSelectComment]
   );
