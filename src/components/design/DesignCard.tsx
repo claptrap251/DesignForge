@@ -18,11 +18,25 @@ interface DesignCardProps {
   projectId: string;
   shareToken?: string;
   onDelete?: (designId: string) => void;
+  onMove?: (designId: string) => void;
+  selectionMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: (designId: string) => void;
 }
 
-export default function DesignCard({ design, projectId, shareToken, onDelete }: DesignCardProps) {
+export default function DesignCard({
+  design,
+  projectId,
+  shareToken,
+  onDelete,
+  onMove,
+  selectionMode,
+  selected,
+  onToggleSelect,
+}: DesignCardProps) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const isImage = design.type === "image";
   const commentCount = design._count?.comments ?? design.comments?.length ?? 0;
   const statusConfig: Record<string, { label: string; cls: string }> = {
@@ -46,6 +60,7 @@ export default function DesignCard({ design, projectId, shareToken, onDelete }: 
 
     if (!confirming) {
       setConfirming(true);
+      setMenuOpen(false);
       return;
     }
 
@@ -67,11 +82,8 @@ export default function DesignCard({ design, projectId, shareToken, onDelete }: 
     setConfirming(false);
   };
 
-  return (
-    <Link
-      href={href}
-      className="group relative block overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm transition-all hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-    >
+  const cardContent = (
+    <>
       <div className="flex h-40 items-center justify-center bg-gray-50 dark:bg-gray-700">
         {isImage && design.filePath ? (
           <img
@@ -117,38 +129,137 @@ export default function DesignCard({ design, projectId, shareToken, onDelete }: 
         </div>
       </div>
 
-      {/* Delete button - only for authenticated views */}
-      {!shareToken && onDelete && (
-        <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
-          {confirming ? (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleting ? "..." : "Delete"}
-              </button>
-              <button
-                onClick={cancelDelete}
-                className="rounded-md bg-white px-2 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
+      {/* Selection checkbox overlay */}
+      {selectionMode && (
+        <div className="absolute left-2 top-2">
+          <div className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
+            selected
+              ? "border-indigo-500 bg-indigo-500 text-white"
+              : "border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700"
+          }`}>
+            {selected && (
+              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Delete confirmation overlay (shown after kebab menu "Delete" is clicked) */}
+      {!shareToken && onDelete && confirming && (
+        <div className="absolute right-2 top-2">
+          <div className="flex items-center gap-1">
             <button
               onClick={handleDelete}
-              className="rounded-md bg-white/90 p-1.5 text-gray-400 shadow-sm backdrop-blur-sm hover:bg-red-50 hover:text-red-600"
-              title="Delete design"
+              disabled={deleting}
+              className="rounded-md bg-red-600 px-2 py-1 text-xs font-medium text-white shadow-sm hover:bg-red-700 disabled:opacity-50"
             >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
+              {deleting ? "..." : "Confirm"}
             </button>
+            <button
+              onClick={cancelDelete}
+              className="rounded-md bg-white px-2 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Kebab menu - only in normal authenticated mode with actions available */}
+      {!shareToken && !selectionMode && (onDelete || onMove) && !confirming && (
+        <div className="absolute right-2 top-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenuOpen((prev) => !prev);
+            }}
+            className="rounded-md bg-white/90 p-1.5 text-gray-500 shadow-sm backdrop-blur-sm hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800/90 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+            title="More actions"
+          >
+            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="5" r="1.5" />
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="12" cy="19" r="1.5" />
+            </svg>
+          </button>
+
+          {menuOpen && (
+            <>
+              {/* Backdrop to close menu on outside click */}
+              <div
+                className="fixed inset-0 z-10"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                }}
+              />
+              {/* Dropdown menu */}
+              <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                {onMove && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMenuOpen(false);
+                      onMove(design.id);
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                    Move to...
+                  </button>
+                )}
+                {onMove && onDelete && (
+                  <div className="border-t border-gray-100 dark:border-gray-700" />
+                )}
+                {onDelete && (
+                  <button
+                    onClick={handleDelete}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
+                )}
+              </div>
+            </>
           )}
         </div>
       )}
+    </>
+  );
+
+  const baseCardClasses = `group relative block overflow-hidden rounded-lg border bg-white dark:bg-gray-800 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`;
+
+  if (selectionMode) {
+    return (
+      <div
+        onClick={() => onToggleSelect?.(design.id)}
+        className={`${baseCardClasses} cursor-pointer ${
+          selected
+            ? "border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-500/30"
+            : "border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md"
+        }`}
+      >
+        {cardContent}
+      </div>
+    );
+  }
+
+  return (
+    <Link
+      href={href}
+      className={`${baseCardClasses} border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md`}
+    >
+      {cardContent}
     </Link>
   );
 }

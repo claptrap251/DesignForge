@@ -106,12 +106,12 @@ export default function ShareDialog({ projectId, open, onClose }: ShareDialogPro
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
+      <div className="relative z-10 w-full max-w-lg rounded-xl bg-white dark:bg-gray-800 dark:border-gray-700 p-6 shadow-xl">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Share Project</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Share Project</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -120,18 +120,18 @@ export default function ShareDialog({ projectId, open, onClose }: ShareDialogPro
         </div>
 
         {error && (
-          <div className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>
+          <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-900/30 px-4 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
         )}
 
         <div className="mt-4">
-          <h3 className="text-sm font-medium text-gray-700">Create New Link</h3>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Create New Link</h3>
           <div className="mt-2 space-y-2">
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Password (optional)"
-              className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="block w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
             <div className="flex gap-2">
               <input
@@ -140,7 +140,7 @@ export default function ShareDialog({ projectId, open, onClose }: ShareDialogPro
                 onChange={(e) => setExpiryDays(e.target.value)}
                 placeholder="Expiry (days, optional)"
                 min="1"
-                className="block flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="block flex-1 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
               <button
                 onClick={createLink}
@@ -154,23 +154,23 @@ export default function ShareDialog({ projectId, open, onClose }: ShareDialogPro
         </div>
 
         <div className="mt-6">
-          <h3 className="text-sm font-medium text-gray-700">Existing Links</h3>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Existing Links</h3>
           {loading ? (
-            <div className="py-4 text-center text-sm text-gray-400">Loading...</div>
+            <div className="py-4 text-center text-sm text-gray-400 dark:text-gray-500">Loading...</div>
           ) : links.length === 0 ? (
-            <div className="py-4 text-center text-sm text-gray-400">No share links yet</div>
+            <div className="py-4 text-center text-sm text-gray-400 dark:text-gray-500">No share links yet</div>
           ) : (
             <div className="mt-2 space-y-2">
               {links.map((link) => (
                 <div
                   key={link.id}
-                  className="flex items-center justify-between rounded-lg border border-gray-200 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 px-3 py-2"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-mono text-gray-700">
+                    <p className="truncate text-sm font-mono text-gray-700 dark:text-gray-300">
                       /share/{link.token}
                     </p>
-                    <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400">
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
                       {link.password && (
                         <span className="flex items-center gap-0.5">
                           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -193,7 +193,7 @@ export default function ShareDialog({ projectId, open, onClose }: ShareDialogPro
                   <div className="ml-2 flex items-center gap-1">
                     <button
                       onClick={() => copyLink(link.token, link.id)}
-                      className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                      className="rounded-md p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
                       title="Copy link"
                     >
                       {copiedId === link.id ? (
@@ -208,7 +208,7 @@ export default function ShareDialog({ projectId, open, onClose }: ShareDialogPro
                     </button>
                     <button
                       onClick={() => deleteLink(link.id)}
-                      className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600"
+                      className="rounded-md p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 dark:hover:text-red-400"
                       title="Delete link"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

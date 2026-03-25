@@ -7,6 +7,7 @@ import { useTheme } from "@/components/ThemeProvider";
 
 interface HeaderProps {
   session: any;
+  isAdmin?: boolean;
 }
 
 function ThemeToggle() {
@@ -44,13 +45,13 @@ function ThemeToggle() {
   );
 }
 
-export default function Header({ session }: HeaderProps) {
+export default function Header({ session, isAdmin: admin }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex items-center gap-2">
           <svg
             className="h-8 w-8 text-indigo-600"
             viewBox="0 0 32 32"
@@ -76,6 +77,14 @@ export default function Header({ session }: HeaderProps) {
           <ThemeToggle />
           {session ? (
             <div className="flex items-center gap-4">
+              {admin && (
+                <Link
+                  href="/admin"
+                  className="rounded-lg border border-orange-400 dark:border-orange-500 px-3 py-1.5 text-sm font-semibold text-orange-600 dark:text-orange-400 transition-colors hover:bg-orange-50 dark:hover:bg-orange-900/30"
+                >
+                  Admin
+                </Link>
+              )}
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {session.user?.name || session.user?.username}
               </span>
@@ -131,6 +140,15 @@ export default function Header({ session }: HeaderProps) {
               <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
                 {session.user?.name || session.user?.username}
               </p>
+              {admin && (
+                <Link
+                  href="/admin"
+                  className="block rounded-lg border border-orange-400 dark:border-orange-500 px-3 py-2 text-sm font-semibold text-orange-600 dark:text-orange-400 text-center hover:bg-orange-50 dark:hover:bg-orange-900/30"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Admin
+                </Link>
+              )}
               <button
                 onClick={() => signOut()}
                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"

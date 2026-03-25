@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { auth } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   const contentType = request.headers.get("content-type") || "";
@@ -45,6 +46,27 @@ export async function POST(request: NextRequest) {
   const folder = await prisma.folder.findUnique({ where: { id: folderId } });
   if (!folder) {
     return NextResponse.json({ error: "Folder not found" }, { status: 404 });
+  }
+
+  // Block uploads directly in user-root folders (must use a sub-folder)
+  if (folder.ownerUsername && !folder.parentId) {
+    return NextResponse.json(
+      { error: "Cannot upload designs directly in your user folder. Create a sub-folder first." },
+      { status: 400 }
+    );
+  }
+
+  const session = await auth();
+  if (session?.user) {
+    const { isOwnerOfFolder } = await import("@/lib/ownership");
+    const username = (session.user as any).username;
+    const owns = await isOwnerOfFolder(folderId!, username);
+    if (!owns) {
+      return NextResponse.json(
+        { error: "Cannot upload to another user's folder" },
+        { status: 403 }
+      );
+    }
   }
 
   let filePath: string | null = null;

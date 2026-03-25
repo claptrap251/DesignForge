@@ -109,7 +109,7 @@ export default function ImageViewer({ src, children }: ImageViewerProps) {
   };
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-gray-100" ref={containerRef}>
+    <div className="relative h-full w-full overflow-hidden bg-gray-100 dark:bg-gray-800" ref={containerRef}>
       <div
         className="h-full w-full touch-none"
         onWheel={handleWheel}
@@ -143,32 +143,32 @@ export default function ImageViewer({ src, children }: ImageViewerProps) {
         </div>
       </div>
 
-      <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-white/90 px-2 sm:px-3 py-1.5 sm:py-2 shadow-md backdrop-blur-sm">
+      <div className="absolute bottom-4 right-4 flex items-center gap-2 rounded-lg bg-white/90 dark:bg-gray-800/90 px-2 sm:px-3 py-1.5 sm:py-2 shadow-md backdrop-blur-sm">
         <button
           onClick={() => setScale((s) => Math.max(s - 0.25, 0.1))}
-          className="rounded p-2 text-gray-600 hover:bg-gray-100 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 flex items-center justify-center"
+          className="rounded p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 flex items-center justify-center"
           title="Zoom out"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
           </svg>
         </button>
-        <span className="min-w-[3rem] text-center text-xs font-medium text-gray-700">
+        <span className="min-w-[3rem] text-center text-xs font-medium text-gray-700 dark:text-gray-300">
           {Math.round(scale * 100)}%
         </span>
         <button
           onClick={() => setScale((s) => Math.min(s + 0.25, 5))}
-          className="rounded p-2 text-gray-600 hover:bg-gray-100 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 flex items-center justify-center"
+          className="rounded p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 flex items-center justify-center"
           title="Zoom in"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
         </button>
-        <div className="mx-1 h-4 w-px bg-gray-300" />
+        <div className="mx-1 h-4 w-px bg-gray-300 dark:bg-gray-600" />
         <button
           onClick={resetView}
-          className="rounded p-2 text-gray-600 hover:bg-gray-100 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 flex items-center justify-center"
+          className="rounded p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 sm:p-1 flex items-center justify-center"
           title="Reset view"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

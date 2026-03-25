@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isAdminUser, setIsAdminUser] = useState(false);
 
   const fetchProjects = useCallback(async () => {
     try {
@@ -35,6 +36,13 @@ export default function DashboardPage() {
     }
   }, [status, router, fetchProjects]);
 
+  useEffect(() => {
+    fetch(apiUrl("/api/admin/check"))
+      .then((r) => r.json())
+      .then((d) => setIsAdminUser(d.isAdmin))
+      .catch(() => {});
+  }, []);
+
   const handleCreateProject = async (data: {
     name: string;
     description: string;
@@ -53,7 +61,7 @@ export default function DashboardPage() {
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <Header session={session} />
+        <Header session={session} isAdmin={isAdminUser} />
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="animate-pulse space-y-4">
             <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
@@ -70,30 +78,32 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header session={session} />
+      <Header session={session} isAdmin={isAdminUser} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Projects</h2>
-          <button
-            onClick={() => setShowCreate(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition flex items-center gap-2"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Projects</h2>
+          {isAdminUser && (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition flex items-center gap-2"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 4v16m8-8H4"
-              />
-            </svg>
-            New Project
-          </button>
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              New Project
+            </button>
+          )}
         </div>
 
         {projects.length === 0 ? (
@@ -117,19 +127,23 @@ export default function DashboardPage() {
               No projects yet
             </h3>
             <p className="text-gray-500 dark:text-gray-400 mb-4">
-              Create your first project to start collecting design feedback.
+              {isAdminUser
+                ? "Create your first project to start collecting design feedback."
+                : "No projects available. Ask your admin to create one."}
             </p>
-            <button
-              onClick={() => setShowCreate(true)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
-            >
-              Create Project
-            </button>
+            {isAdminUser && (
+              <button
+                onClick={() => setShowCreate(true)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+              >
+                Create Project
+              </button>
+            )}
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {projects.map((project) => (
-              <ProjectCard key={project.id} project={project} />
+              <ProjectCard key={project.id} project={project} isAdmin={isAdminUser} onDelete={fetchProjects} />
             ))}
           </div>
         )}
