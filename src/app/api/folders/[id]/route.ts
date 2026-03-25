@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
+import { isOwnerOfFolder } from "@/lib/ownership";
 
 export async function GET(
   _request: NextRequest,
@@ -28,6 +31,17 @@ export async function PUT(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const username = (session.user as any).username;
+  const owns = await isOwnerOfFolder(id, username);
+  if (!owns) {
+    return NextResponse.json({ error: "Cannot modify another user's folder" }, { status: 403 });
+  }
+
   const body = await request.json();
   const { name } = body;
 
@@ -53,6 +67,17 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const username = (session.user as any).username;
+  const admin = isAdmin(session);
+  const owns = await isOwnerOfFolder(id, username);
+  if (!owns && !admin) {
+    return NextResponse.json({ error: "Cannot delete another user's folder" }, { status: 403 });
+  }
 
   const folder = await prisma.folder.findUnique({ where: { id } });
   if (!folder) {

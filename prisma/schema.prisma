@@ -32,16 +32,17 @@ model Project {
 }
 
 model Folder {
-  id        String   @id @default(cuid())
-  name      String
-  projectId String
-  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  parentId  String?
-  parent    Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
-  children  Folder[] @relation("FolderTree")
-  order     Int      @default(0)
-  designs   Design[]
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  name          String
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentId      String?
+  parent        Folder?  @relation("FolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children      Folder[] @relation("FolderTree")
+  order         Int      @default(0)
+  ownerUsername String?
+  designs       Design[]
+  createdAt     DateTime @default(now())
 }
 
 model Design {

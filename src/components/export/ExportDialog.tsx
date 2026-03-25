@@ -89,12 +89,12 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-[calc(100%-2rem)] sm:max-w-md rounded-xl bg-white p-4 sm:p-6 shadow-xl">
+      <div className="relative z-10 w-full max-w-[calc(100%-2rem)] sm:max-w-md rounded-xl bg-white dark:bg-gray-800 dark:border-gray-700 p-4 sm:p-6 shadow-xl">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Export Project</h2>
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Export Project</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -103,7 +103,7 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
         </div>
 
         {error && (
-          <div className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>
+          <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-900/30 px-4 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
         )}
 
         <div className="mt-4 space-y-2">
@@ -112,8 +112,8 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
               key={opt.value}
               className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
                 format === opt.value
-                  ? "border-indigo-300 bg-indigo-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-indigo-300 bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-900/30"
+                  : "border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600"
               }`}
             >
               <input
@@ -125,8 +125,8 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
                 className="mt-0.5 h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <div>
-                <span className="text-sm font-medium text-gray-900">{opt.label}</span>
-                <p className="text-xs text-gray-500">{opt.description}</p>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{opt.label}</span>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{opt.description}</p>
               </div>
             </label>
           ))}
@@ -135,7 +135,7 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+            className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             Cancel
           </button>

@@ -8,9 +8,12 @@ interface SidebarProps {
   onSelectFolder: (id: string) => void;
   onCreateFolder: (name: string, parentId?: string) => void;
   onDeleteFolder: (id: string) => void;
+  onRenameFolder: (id: string, newName: string) => void;
   projectName: string;
   mobileOpen?: boolean;
   onMobileClose?: () => void;
+  currentUsername?: string;
+  isAdmin?: boolean;
 }
 
 function FolderItem({
@@ -20,6 +23,10 @@ function FolderItem({
   onSelectFolder,
   onCreateFolder,
   onDeleteFolder,
+  onRenameFolder,
+  currentUsername,
+  isAdmin,
+  inheritedOwner,
 }: {
   folder: any;
   level: number;
@@ -27,12 +34,29 @@ function FolderItem({
   onSelectFolder: (id: string) => void;
   onCreateFolder: (name: string, parentId?: string) => void;
   onDeleteFolder: (id: string) => void;
+  onRenameFolder: (id: string, newName: string) => void;
+  currentUsername?: string;
+  isAdmin?: boolean;
+  inheritedOwner?: string | null;
 }) {
   const [expanded, setExpanded] = useState(true);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(folder.name);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const isActive = activeFolder === folder.id;
   const hasChildren = folder.children && folder.children.length > 0;
+  const folderOwner = folder.ownerUsername || inheritedOwner || null;
+  const isOwnFolder = folderOwner === currentUsername;
+
+  const handleRename = () => {
+    const trimmed = renameValue.trim();
+    if (trimmed && trimmed !== folder.name) {
+      onRenameFolder(folder.id, trimmed);
+    }
+    setIsRenaming(false);
+  };
 
   const handleCreateSubfolder = () => {
     if (newFolderName.trim()) {
@@ -89,37 +113,94 @@ function FolderItem({
           />
         </svg>
 
-        <span className="truncate flex-1">{folder.name}</span>
+        {isRenaming ? (
+          <input
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleRename();
+              if (e.key === "Escape") {
+                setRenameValue(folder.name);
+                setIsRenaming(false);
+              }
+            }}
+            onBlur={handleRename}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full rounded border border-gray-300 dark:border-gray-600 px-2 py-0.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+            autoFocus
+          />
+        ) : (
+          <>
+            <span
+              className="truncate flex-1"
+              onDoubleClick={(e) => {
+                e.stopPropagation();
+                setRenameValue(folder.name);
+                setIsRenaming(true);
+              }}
+            >
+              {folder.name}
+            </span>
+            {!isOwnFolder && folderOwner && (
+              <span className="ml-1 text-[10px] text-gray-400 dark:text-gray-500 shrink-0" title="Read-only">
+                <svg className="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+              </span>
+            )}
+          </>
+        )}
 
         <div className="flex gap-0.5 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowNewFolder(true);
-            }}
-            className="rounded p-0.5 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
-            title="Add subfolder"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteFolder(folder.id);
-            }}
-            className="rounded p-0.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600"
-            title="Delete folder"
-          >
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
-          </button>
+          {isOwnFolder && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRenameValue(folder.name);
+                  setIsRenaming(true);
+                }}
+                className="rounded p-0.5 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
+                title="Rename folder"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowNewFolder(true);
+                }}
+                className="rounded p-0.5 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
+                title="Add subfolder"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </button>
+            </>
+          )}
+          {(isOwnFolder || isAdmin) && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setConfirmingDelete(true);
+                }}
+                className="rounded p-0.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600"
+                title="Delete folder"
+              >
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+          )}
         </div>
       </div>
 
@@ -173,8 +254,50 @@ function FolderItem({
               onSelectFolder={onSelectFolder}
               onCreateFolder={onCreateFolder}
               onDeleteFolder={onDeleteFolder}
+              onRenameFolder={onRenameFolder}
+              currentUsername={currentUsername}
+              isAdmin={isAdmin}
+              inheritedOwner={folderOwner}
             />
           ))}
+        </div>
+      )}
+
+      {confirmingDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/50" onClick={() => setConfirmingDelete(false)} />
+          <div className="relative z-10 w-full max-w-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-xl">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
+                <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Delete folder</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  &quot;{folder.name}&quot; and all its contents will be permanently deleted.
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setConfirmingDelete(false)}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmingDelete(false);
+                  onDeleteFolder(folder.id);
+                }}
+                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
@@ -187,9 +310,12 @@ export default function Sidebar({
   onSelectFolder,
   onCreateFolder,
   onDeleteFolder,
+  onRenameFolder,
   projectName,
   mobileOpen,
   onMobileClose,
+  currentUsername,
+  isAdmin,
 }: SidebarProps) {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
@@ -226,15 +352,17 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto p-2">
         <div className="mb-2 flex items-center justify-between px-2">
           <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Folders</span>
-          <button
-            onClick={() => setShowNewFolder(true)}
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
-            title="New folder"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
+          {isAdmin && (
+            <button
+              onClick={() => setShowNewFolder(true)}
+              className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+              title="New folder"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            </button>
+          )}
         </div>
 
         {showNewFolder && (
@@ -291,6 +419,9 @@ export default function Sidebar({
             onSelectFolder={handleSelectFolder}
             onCreateFolder={onCreateFolder}
             onDeleteFolder={onDeleteFolder}
+            onRenameFolder={onRenameFolder}
+            currentUsername={currentUsername}
+            isAdmin={isAdmin}
           />
         ))}
       </div>

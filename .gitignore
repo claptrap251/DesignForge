@@ -43,6 +43,12 @@ next-env.d.ts
 /uploads/*
 !/uploads/.gitkeep
 
+# runtime data
+/data/
+
+# brainstorm sessions
+/.superpowers/
+
 # IDE
 .idea/
 .vscode/

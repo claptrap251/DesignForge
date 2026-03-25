@@ -66,6 +66,37 @@ export async function createTestMarkdownDesign(
   });
 }
 
+/** Create a test image design in a folder */
+export async function createTestImageDesign(
+  folderId: string,
+  filePath = "test-image.png"
+) {
+  return prisma.design.create({
+    data: {
+      name: "Test Image",
+      type: "IMAGE",
+      filePath,
+      folderId,
+      currentVersion: 1,
+      order: 0,
+      versions: {
+        create: { version: 1, filePath },
+      },
+    },
+    include: { versions: true },
+  });
+}
+
+/** Create a user-root folder in a project */
+export async function createTestUserFolder(
+  projectId: string,
+  username: string
+) {
+  return prisma.folder.create({
+    data: { name: username, projectId, order: 0, ownerUsername: username },
+  });
+}
+
 /** Create a test comment (image-style with xPercent/yPercent) */
 export async function createTestImageComment(
   designId: string,

@@ -46,6 +46,16 @@ export async function PUT(
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
   }
 
+  const session = await (await import("@/lib/auth")).auth();
+  if (session?.user) {
+    const { isOwnerOfDesign } = await import("@/lib/ownership");
+    const username = (session.user as any).username;
+    const owns = await isOwnerOfDesign(id, username);
+    if (!owns) {
+      return NextResponse.json({ error: "Cannot edit another user's design" }, { status: 403 });
+    }
+  }
+
   // Handle multipart form data (new version upload)
   if (contentType.includes("multipart/form-data")) {
     const formData = await request.formData();
@@ -198,6 +208,16 @@ export async function DELETE(
   });
   if (!design) {
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
+  }
+
+  const session = await (await import("@/lib/auth")).auth();
+  if (session?.user) {
+    const { isOwnerOfDesign } = await import("@/lib/ownership");
+    const username = (session.user as any).username;
+    const owns = await isOwnerOfDesign(id, username);
+    if (!owns) {
+      return NextResponse.json({ error: "Cannot edit another user's design" }, { status: 403 });
+    }
   }
 
   // Delete all version files and the current file
