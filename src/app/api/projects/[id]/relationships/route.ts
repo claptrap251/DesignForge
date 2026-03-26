@@ -1,16 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { auth } from "@/lib/auth";
 import { computeRelationships } from "@/lib/similarity";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { id } = await params;
   const { searchParams } = new URL(request.url);
   const designId = searchParams.get("designId");
   const thresholdParam = searchParams.get("threshold");
-  const threshold = thresholdParam ? parseFloat(thresholdParam) : 0.1;
+  let threshold = 0.1;
+  if (thresholdParam) {
+    const parsed = parseFloat(thresholdParam);
+    if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) {
+      threshold = parsed;
+    }
+  }
 
   const project = await prisma.project.findUnique({ where: { id } });
   if (!project) {
