@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["bcryptjs", "jsdom", "mermaid"],
+  serverExternalPackages: ["bcryptjs", "jsdom", "mermaid", "@xenova/transformers"],
   output: "standalone",
   ...(process.env.ALLOWED_DEV_ORIGINS
     ? { allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS.split(",") }

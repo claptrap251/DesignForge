@@ -42,7 +42,7 @@ export async function GET(
       content: d.content!,
     }));
 
-  let relationships = computeRelationships(designsForScoring, threshold);
+  let relationships = await computeRelationships(designsForScoring, threshold);
 
   // Filter to a specific design if requested
   if (designId) {

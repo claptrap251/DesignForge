@@ -1,19 +1,21 @@
 /**
- * Hybrid chunk-level TF-IDF similarity engine.
+ * Hybrid similarity engine: chunk-level TF-IDF + optional embeddings.
  *
- * Instead of treating each document as a single bag of words, we split by
- * headings into sections (chunks). TF-IDF is computed per-chunk across
- * ALL chunks from ALL documents. Similarity between two documents is the
- * maximum cosine similarity between any pair of their chunks — so a
- * "Debugging" section in doc A can strongly match a "Debug Strategies"
- * doc B even if the rest of the documents are unrelated.
+ * Three similarity signals are computed:
+ *   1. Document-level TF-IDF cosine similarity (broad topical overlap)
+ *   2. Best chunk-pair TF-IDF similarity (section-level precision)
+ *   3. Embedding cosine similarity (semantic meaning) — optional, via env flag
  *
- * The final score blends:
- *   - Document-level TF-IDF cosine similarity (broad topical overlap)
- *   - Best chunk-pair similarity (section-level precision)
+ * Embeddings use all-MiniLM-L6-v2 via @xenova/transformers (runs locally,
+ * no external API calls). Enabled by setting SIMILARITY_USE_EMBEDDINGS=true
+ * in .env.
  *
- * Pure TypeScript — no external dependencies, no LLM.
+ * Pure TypeScript — no external API calls, no LLM.
  */
+
+// ---------------------------------------------------------------------------
+// Stopwords
+// ---------------------------------------------------------------------------
 
 const STOPWORDS = new Set([
   "a","about","above","after","again","against","all","am","an","and","any","are",
@@ -62,12 +64,29 @@ export function tokenize(text: string): string[] {
     .filter((token) => token.length >= 2 && !STOPWORDS.has(token));
 }
 
+/** Strip markdown for embedding (keep readable text, remove syntax). */
+export function stripMarkdown(text: string): string {
+  return text
+    .replace(/```[\s\S]*?```/g, " ")
+    .replace(/`[^`]+`/g, " ")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, " ")
+    .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*{1,3}([^*]+)\*{1,3}/g, "$1")
+    .replace(/_{1,3}([^_]+)_{1,3}/g, "$1")
+    .replace(/^[-*_]{3,}\s*$/gm, " ")
+    .replace(/^>\s+/gm, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // ---------------------------------------------------------------------------
 // Chunking — split markdown by headings into sections
 // ---------------------------------------------------------------------------
 
 interface Chunk {
-  heading: string; // e.g. "## Debugging" or "(intro)" for content before first heading
+  heading: string;
   text: string;
 }
 
@@ -81,7 +100,6 @@ export function chunkByHeading(content: string): Chunk[] {
   for (const line of lines) {
     const headingMatch = line.match(/^(#{1,6})\s+(.+)/);
     if (headingMatch) {
-      // Flush previous chunk
       if (currentLines.length > 0) {
         const text = currentLines.join("\n").trim();
         if (text) chunks.push({ heading: currentHeading, text });
@@ -93,7 +111,6 @@ export function chunkByHeading(content: string): Chunk[] {
     }
   }
 
-  // Flush last chunk
   if (currentLines.length > 0) {
     const text = currentLines.join("\n").trim();
     if (text) chunks.push({ heading: currentHeading, text });
@@ -106,14 +123,12 @@ export function chunkByHeading(content: string): Chunk[] {
 // TF-IDF
 // ---------------------------------------------------------------------------
 
-/** Compute TF-IDF vectors for a set of token bags. */
 export function computeTFIDF(
   documents: { id: string; tokens: string[] }[]
 ): Map<string, Map<string, number>> {
   const N = documents.length;
   if (N === 0) return new Map();
 
-  // Document frequency
   const df = new Map<string, number>();
   for (const doc of documents) {
     const uniqueTerms = new Set(doc.tokens);
@@ -150,7 +165,7 @@ export function computeTFIDF(
 }
 
 // ---------------------------------------------------------------------------
-// Cosine similarity
+// Cosine similarity (for both TF-IDF sparse vectors and dense embeddings)
 // ---------------------------------------------------------------------------
 
 export function cosineSimilarity(
@@ -181,6 +196,75 @@ export function cosineSimilarity(
   return dotProduct / magnitude;
 }
 
+/** Cosine similarity for dense float arrays (embeddings). */
+export function denseCosineSimilarity(a: number[], b: number[]): number {
+  if (a.length !== b.length || a.length === 0) return 0;
+
+  let dot = 0;
+  let magA = 0;
+  let magB = 0;
+
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    magA += a[i] * a[i];
+    magB += b[i] * b[i];
+  }
+
+  const mag = Math.sqrt(magA) * Math.sqrt(magB);
+  if (mag === 0) return 0;
+
+  return dot / mag;
+}
+
+// ---------------------------------------------------------------------------
+// Embeddings (optional — requires @xenova/transformers)
+// ---------------------------------------------------------------------------
+
+let pipelineInstance: any = null;
+
+/** Load the embedding model (lazy singleton). */
+async function getEmbeddingPipeline() {
+  if (pipelineInstance) return pipelineInstance;
+
+  const { pipeline } = await import("@xenova/transformers");
+  pipelineInstance = await pipeline(
+    "feature-extraction",
+    "Xenova/all-MiniLM-L6-v2"
+  );
+  return pipelineInstance;
+}
+
+/**
+ * Compute embedding for a text string.
+ * Returns a 384-dimensional float array (all-MiniLM-L6-v2).
+ * Text is truncated to ~512 tokens by the model.
+ */
+export async function computeEmbedding(text: string): Promise<number[]> {
+  const pipe = await getEmbeddingPipeline();
+  const output = await pipe(text, { pooling: "mean", normalize: true });
+  return Array.from(output.data as Float32Array);
+}
+
+/**
+ * Compute embeddings for multiple documents.
+ * Returns a Map of docId → embedding vector.
+ */
+export async function computeEmbeddings(
+  documents: { id: string; text: string }[]
+): Promise<Map<string, number[]>> {
+  const pipe = await getEmbeddingPipeline();
+  const result = new Map<string, number[]>();
+
+  for (const doc of documents) {
+    // Truncate to reasonable length for the model (first ~2000 chars)
+    const truncated = doc.text.slice(0, 2000);
+    const output = await pipe(truncated, { pooling: "mean", normalize: true });
+    result.set(doc.id, Array.from(output.data as Float32Array));
+  }
+
+  return result;
+}
+
 // ---------------------------------------------------------------------------
 // Shared terms
 // ---------------------------------------------------------------------------
@@ -206,7 +290,7 @@ function getSharedTerms(
 }
 
 // ---------------------------------------------------------------------------
-// Relationship computation — hybrid doc-level + chunk-level
+// Relationship computation — hybrid doc + chunk + optional embeddings
 // ---------------------------------------------------------------------------
 
 export interface DocumentRelationship {
@@ -215,28 +299,47 @@ export interface DocumentRelationship {
   docAName: string;
   docBName: string;
   score: number;           // blended score (0-1)
-  docScore: number;        // document-level similarity
-  chunkScore: number;      // best chunk-pair similarity
+  docScore: number;        // document-level TF-IDF similarity
+  chunkScore: number;      // best chunk-pair TF-IDF similarity
+  embeddingScore: number;  // embedding similarity (0 if disabled)
   bestChunkA: string;      // heading of best matching chunk in doc A
   bestChunkB: string;      // heading of best matching chunk in doc B
   sharedTerms: string[];
 }
 
+/** Check if embedding mode is enabled via environment variable. */
+export function isEmbeddingEnabled(): boolean {
+  return process.env.SIMILARITY_USE_EMBEDDINGS === "true";
+}
+
+/**
+ * Blending weights for combining similarity signals.
+ * These were determined by testing across diverse document sets.
+ * See tests/similarity-blend-test.mjs for the evaluation harness.
+ */
+export const BLEND_WEIGHTS = {
+  // When embeddings are enabled: all three signals
+  // Embedding weight kept at 0.40 (semantic), chunk scaled proportionally
+  withEmbeddings: { doc: 0.12, chunk: 0.48, embedding: 0.40 },
+  // Without embeddings: chunk-level dominates (empirically best at 74% accuracy)
+  withoutEmbeddings: { doc: 0.2, chunk: 0.8 },
+};
+
 /**
  * Compute pairwise relationships between documents.
  *
- * Strategy:
- *   1. Compute document-level TF-IDF cosine similarity (whole-doc vectors)
- *   2. Chunk each doc by heading, compute TF-IDF across ALL chunks corpus,
- *      find the best chunk-pair between each doc pair
- *   3. Blend: score = 0.4 * docScore + 0.6 * chunkScore
- *      (chunk-level gets more weight since it catches section-level matches)
+ * Signals:
+ *   1. Document-level TF-IDF cosine similarity
+ *   2. Best chunk-pair TF-IDF cosine similarity
+ *   3. Embedding cosine similarity (if SIMILARITY_USE_EMBEDDINGS=true)
  */
-export function computeRelationships(
+export async function computeRelationships(
   designs: { id: string; name: string; content: string }[],
   threshold: number = 0.1
-): DocumentRelationship[] {
+): Promise<DocumentRelationship[]> {
   if (designs.length < 2) return [];
+
+  const useEmbeddings = isEmbeddingEnabled();
 
   // --- Document-level TF-IDF ---
   const docTokenized = designs.map((d) => ({
@@ -246,7 +349,6 @@ export function computeRelationships(
   const docVectors = computeTFIDF(docTokenized);
 
   // --- Chunk-level TF-IDF ---
-  // Build chunk corpus: each chunk gets a unique id like "docId::chunkIdx"
   const chunksByDoc = new Map<string, { chunkId: string; heading: string; tokens: string[] }[]>();
   const allChunks: { id: string; tokens: string[] }[] = [];
 
@@ -268,15 +370,32 @@ export function computeRelationships(
 
   const chunkVectors = computeTFIDF(allChunks);
 
+  // --- Embeddings (if enabled) ---
+  let embeddingVectors: Map<string, number[]> | null = null;
+  if (useEmbeddings) {
+    try {
+      const docs = designs.map((d) => ({
+        id: d.id,
+        text: stripMarkdown(d.content),
+      }));
+      embeddingVectors = await computeEmbeddings(docs);
+    } catch (err) {
+      console.error("Embedding computation failed, falling back to TF-IDF only:", err);
+    }
+  }
+
   // --- Pairwise comparison ---
   const relationships: DocumentRelationship[] = [];
+  const weights = embeddingVectors
+    ? BLEND_WEIGHTS.withEmbeddings
+    : BLEND_WEIGHTS.withoutEmbeddings;
 
   for (let i = 0; i < designs.length; i++) {
     for (let j = i + 1; j < designs.length; j++) {
       const dA = designs[i];
       const dB = designs[j];
 
-      // Document-level score
+      // Document-level TF-IDF score
       const vecA = docVectors.get(dA.id)!;
       const vecB = docVectors.get(dB.id)!;
       const docScore = cosineSimilarity(vecA, vecB);
@@ -306,8 +425,25 @@ export function computeRelationships(
         }
       }
 
-      // Blended score: chunk-level weighted higher for section-precision
-      const blended = 0.4 * docScore + 0.6 * chunkScore;
+      // Embedding score
+      let embeddingScore = 0;
+      if (embeddingVectors) {
+        const embA = embeddingVectors.get(dA.id);
+        const embB = embeddingVectors.get(dB.id);
+        if (embA && embB) {
+          embeddingScore = denseCosineSimilarity(embA, embB);
+        }
+      }
+
+      // Blended score
+      let blended: number;
+      if (embeddingVectors) {
+        const w = weights as typeof BLEND_WEIGHTS.withEmbeddings;
+        blended = w.doc * docScore + w.chunk * chunkScore + w.embedding * embeddingScore;
+      } else {
+        const w = weights as typeof BLEND_WEIGHTS.withoutEmbeddings;
+        blended = w.doc * docScore + w.chunk * chunkScore;
+      }
 
       if (blended >= threshold) {
         relationships.push({
@@ -318,6 +454,7 @@ export function computeRelationships(
           score: Math.round(blended * 1000) / 1000,
           docScore: Math.round(docScore * 1000) / 1000,
           chunkScore: Math.round(chunkScore * 1000) / 1000,
+          embeddingScore: Math.round(embeddingScore * 1000) / 1000,
           bestChunkA,
           bestChunkB,
           sharedTerms: getSharedTerms(vecA, vecB),
