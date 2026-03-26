@@ -14,6 +14,9 @@ export async function GET(
   const design = await prisma.design.findUnique({
     where: { id },
     include: {
+      folder: {
+        select: { ownerUsername: true },
+      },
       comments: {
         orderBy: { pinNumber: "asc" },
         include: {
@@ -32,7 +35,9 @@ export async function GET(
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
   }
 
-  return NextResponse.json(design);
+  // Flatten ownerUsername to top level for client convenience
+  const { folder, ...rest } = design;
+  return NextResponse.json({ ...rest, ownerUsername: folder?.ownerUsername ?? null });
 }
 
 export async function PUT(

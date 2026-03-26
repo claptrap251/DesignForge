@@ -488,7 +488,7 @@ export default function DesignViewerPage() {
               </div>
             )}
           </div>
-          {design.type === "MARKDOWN" && !isEditing && (!viewingVersion || viewingVersion.version === design.currentVersion) && (
+          {design.type === "MARKDOWN" && !isEditing && (!viewingVersion || viewingVersion.version === design.currentVersion) && sessionUser?.username && design.ownerUsername === sessionUser.username && (
             <button
               onClick={() => setIsEditing(true)}
               className="flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -499,7 +499,7 @@ export default function DesignViewerPage() {
               <span className="hidden sm:inline">Edit</span>
             </button>
           )}
-          {!isEditing && (
+          {!isEditing && sessionUser?.username && design.ownerUsername === sessionUser.username && (
           <button
             onClick={() => setShowUploadVersion(true)}
             className="flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"

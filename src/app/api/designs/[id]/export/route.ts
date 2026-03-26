@@ -29,7 +29,8 @@ export async function GET(
   const safeName = design.name.replace(/[^a-zA-Z0-9_-]/g, "_");
 
   switch (format) {
-    case "md": {
+    case "md":
+    case "markdown": {
       const markdown = await exportDesignToMarkdown(id);
       return new NextResponse(markdown, {
         headers: {
