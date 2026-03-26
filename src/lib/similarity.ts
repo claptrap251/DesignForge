@@ -318,11 +318,11 @@ export function isEmbeddingEnabled(): boolean {
  * See tests/similarity-blend-test.mjs for the evaluation harness.
  */
 export const BLEND_WEIGHTS = {
-  // When embeddings are enabled: all three signals
-  // Embedding weight kept at 0.40 (semantic), chunk scaled proportionally
-  withEmbeddings: { doc: 0.12, chunk: 0.48, embedding: 0.40 },
-  // Without embeddings: chunk-level dominates (empirically best at 74% accuracy)
-  withoutEmbeddings: { doc: 0.2, chunk: 0.8 },
+  // When embeddings are enabled: embeddings dominate for semantic similarity,
+  // chunk TF-IDF catches exact term overlap, doc-level adds minimal value
+  withEmbeddings: { doc: 0.05, chunk: 0.35, embedding: 0.60 },
+  // Without embeddings: chunk-level dominates (empirically tuned, 90% accuracy)
+  withoutEmbeddings: { doc: 0.3, chunk: 0.7 },
 };
 
 /**
