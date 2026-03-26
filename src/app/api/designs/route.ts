@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { auth } from "@/lib/auth";
+import { authenticateRequest } from "@/lib/apiAuth";
 
 export async function POST(request: NextRequest) {
   const contentType = request.headers.get("content-type") || "";
@@ -56,11 +56,10 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const session = await auth();
-  if (session?.user) {
+  const { user } = await authenticateRequest(request);
+  if (user) {
     const { isOwnerOfFolder } = await import("@/lib/ownership");
-    const username = (session.user as any).username;
-    const owns = await isOwnerOfFolder(folderId!, username);
+    const owns = await isOwnerOfFolder(folderId!, user.username);
     if (!owns) {
       return NextResponse.json(
         { error: "Cannot upload to another user's folder" },

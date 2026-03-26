@@ -1,0 +1,68 @@
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { computeRelationships } from "@/lib/similarity";
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const { searchParams } = new URL(request.url);
+  const designId = searchParams.get("designId");
+  const thresholdParam = searchParams.get("threshold");
+  const threshold = thresholdParam ? parseFloat(thresholdParam) : 0.1;
+
+  const project = await prisma.project.findUnique({ where: { id } });
+  if (!project) {
+    return NextResponse.json({ error: "Project not found" }, { status: 404 });
+  }
+
+  // Fetch all markdown designs in the project
+  const designs = await prisma.design.findMany({
+    where: {
+      folder: { projectId: id },
+      type: "MARKDOWN",
+      content: { not: null },
+    },
+    select: {
+      id: true,
+      name: true,
+      content: true,
+      folder: {
+        select: { name: true, ownerUsername: true },
+      },
+    },
+  });
+
+  const designsForScoring = designs
+    .filter((d) => d.content && d.content.trim().length > 0)
+    .map((d) => ({
+      id: d.id,
+      name: d.name,
+      content: d.content!,
+    }));
+
+  let relationships = computeRelationships(designsForScoring, threshold);
+
+  // Filter to a specific design if requested
+  if (designId) {
+    relationships = relationships.filter(
+      (r) => r.docAId === designId || r.docBId === designId
+    );
+  }
+
+  // Enrich with folder/owner info
+  const folderMap = new Map(
+    designs.map((d) => [d.id, { folder: d.folder.name, owner: d.folder.ownerUsername }])
+  );
+
+  const enriched = relationships.map((r) => ({
+    ...r,
+    docAFolder: folderMap.get(r.docAId)?.folder,
+    docAOwner: folderMap.get(r.docAId)?.owner,
+    docBFolder: folderMap.get(r.docBId)?.folder,
+    docBOwner: folderMap.get(r.docBId)?.owner,
+  }));
+
+  return NextResponse.json({ relationships: enriched });
+}

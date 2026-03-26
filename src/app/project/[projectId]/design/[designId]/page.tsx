@@ -14,6 +14,9 @@ import { computeAnchor } from "@/lib/anchor";
 import { copyToClipboard } from "@/lib/clipboard";
 import VersionHistory from "@/components/design/VersionHistory";
 import UploadNewVersion from "@/components/design/UploadNewVersion";
+import MarkdownEditor from "@/components/design/MarkdownEditor";
+import RelatedDesigns from "@/components/design/RelatedDesigns";
+import type { SidebarTab } from "@/components/comments/CommentSidebar";
 
 export default function DesignViewerPage() {
   const { data: session } = useSession();
@@ -39,6 +42,8 @@ export default function DesignViewerPage() {
   const statusMenuRef = useRef<HTMLDivElement>(null);
   const markdownContentRef = useRef<HTMLDivElement>(null);
   const [pendingAnchorLine, setPendingAnchorLine] = useState<number | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("comments");
 
   const sessionUser = session?.user?.id
     ? { id: session.user.id, name: session.user.name ?? undefined, username: (session.user as any).username ?? undefined }
@@ -279,6 +284,24 @@ export default function DesignViewerPage() {
     setShowUploadVersion(true);
   };
 
+  const handleEditorSave = async (newContent: string, changeNote: string) => {
+    const formData = new FormData();
+    formData.append("content", newContent);
+    if (changeNote.trim()) {
+      formData.append("changeNote", changeNote.trim());
+    }
+    const res = await fetch(apiUrl(`/api/designs/${designId}`), {
+      method: "PUT",
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || "Save failed");
+    }
+    setIsEditing(false);
+    fetchDesign();
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -465,6 +488,18 @@ export default function DesignViewerPage() {
               </div>
             )}
           </div>
+          {design.type === "MARKDOWN" && !isEditing && (!viewingVersion || viewingVersion.version === design.currentVersion) && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span className="hidden sm:inline">Edit</span>
+            </button>
+          )}
+          {!isEditing && (
           <button
             onClick={() => setShowUploadVersion(true)}
             className="flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -474,6 +509,8 @@ export default function DesignViewerPage() {
             </svg>
             <span className="hidden sm:inline">New Version</span>
           </button>
+          )}
+          {!isEditing && (
           <button
             onClick={() => setIsAddMode(!isAddMode)}
             className={`px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1 ${
@@ -498,7 +535,9 @@ export default function DesignViewerPage() {
               </>
             )}
           </button>
+          )}
           {/* Mobile comments toggle */}
+          {!isEditing && (
           <button
             onClick={() => setCommentSidebarOpen(true)}
             className="lg:hidden flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -509,6 +548,7 @@ export default function DesignViewerPage() {
             </svg>
             <span className="text-xs font-medium">{visibleComments.length}</span>
           </button>
+          )}
         </div>
       </div>
 
@@ -534,11 +574,24 @@ export default function DesignViewerPage() {
         </div>
       )}
 
+      {/* Editing banner */}
+      {isEditing && (
+        <div className="bg-amber-50 dark:bg-amber-900/30 border-b border-amber-200 dark:border-amber-700 px-4 py-2 text-center text-sm text-amber-800 dark:text-amber-300">
+          Editing — changes will create a new version
+        </div>
+      )}
+
       {/* Main content with sidebar */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Design viewer */}
+        {/* Design viewer / editor */}
         <div ref={viewerRef} className="flex-1 relative overflow-auto bg-gray-100 dark:bg-gray-800">
-          {design.type === "IMAGE" ? (
+          {isEditing && design.type === "MARKDOWN" ? (
+            <MarkdownEditor
+              content={design.content || ""}
+              onSave={handleEditorSave}
+              onCancel={() => setIsEditing(false)}
+            />
+          ) : design.type === "IMAGE" ? (
             <ImageViewer
               src={
                 viewingVersion && viewingVersion.version !== design.currentVersion
@@ -576,7 +629,8 @@ export default function DesignViewerPage() {
           )}
         </div>
 
-        {/* Comment sidebar */}
+        {/* Comment sidebar - hidden during editing */}
+        {!isEditing && (
         <CommentSidebar
           comments={visibleComments}
           onResolve={handleResolve}
@@ -588,7 +642,15 @@ export default function DesignViewerPage() {
           onMobileClose={() => setCommentSidebarOpen(false)}
           sessionUser={sessionUser}
           onScrollToComment={handleScrollToComment}
+          activeTab={sidebarTab}
+          onTabChange={setSidebarTab}
+          relatedContent={
+            design.type === "MARKDOWN"
+              ? <RelatedDesigns designId={designId} projectId={projectId} />
+              : undefined
+          }
         />
+        )}
       </div>
 
       {/* Upload new version modal */}
