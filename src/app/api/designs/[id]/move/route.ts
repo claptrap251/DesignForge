@@ -36,6 +36,14 @@ export async function PATCH(
     return NextResponse.json({ error: "Target folder not found" }, { status: 404 });
   }
 
+  // Block moving into user-root folders (designs must be in sub-folders)
+  if (targetFolder.ownerUsername && !targetFolder.parentId) {
+    return NextResponse.json(
+      { error: "Cannot move designs into a user root folder. Choose a sub-folder." },
+      { status: 400 }
+    );
+  }
+
   if (design.folder.projectId !== targetFolder.projectId) {
     return NextResponse.json(
       { error: "Cannot move design to a folder in a different project" },
