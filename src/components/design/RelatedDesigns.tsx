@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiUrl } from "@/lib/basePath";
+import { apiUrl, navUrl } from "@/lib/basePath";
 
 interface RelatedDesignsProps {
   designId: string;
@@ -110,7 +110,7 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
         return (
           <a
             key={relatedId}
-            href={`/project/${projectId}/design/${relatedId}`}
+            href={navUrl(`/project/${projectId}/design/${relatedId}`)}
             className="block rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-sm transition-all"
           >
             <div className="flex items-start justify-between gap-2">
