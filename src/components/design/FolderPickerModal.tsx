@@ -31,16 +31,18 @@ function FolderTreeItem({
 }) {
   const [expanded, setExpanded] = useState(true);
   const isCurrent = folder.id === currentFolderId;
+  const isUserRoot = !!(folder as any).ownerUsername && !(folder as any).parentId;
+  const isDisabled = isCurrent || isUserRoot;
   const isSelected = folder.id === selectedId;
   const hasChildren = folder.children && folder.children.length > 0;
 
   return (
     <div>
       <button
-        onClick={() => !isCurrent && onSelect(folder.id)}
-        disabled={isCurrent}
+        onClick={() => !isDisabled && onSelect(folder.id)}
+        disabled={isDisabled}
         className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors ${
-          isCurrent
+          isDisabled
             ? "text-gray-400 dark:text-gray-500 cursor-not-allowed"
             : isSelected
             ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-medium"
