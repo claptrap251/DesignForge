@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { unlink, writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
+import { authenticateRequest } from "@/lib/apiAuth";
 
 export async function GET(
   _request: NextRequest,
@@ -13,6 +14,9 @@ export async function GET(
   const design = await prisma.design.findUnique({
     where: { id },
     include: {
+      folder: {
+        select: { ownerUsername: true },
+      },
       comments: {
         orderBy: { pinNumber: "asc" },
         include: {
@@ -31,7 +35,9 @@ export async function GET(
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
   }
 
-  return NextResponse.json(design);
+  // Flatten ownerUsername to top level for client convenience
+  const { folder, ...rest } = design;
+  return NextResponse.json({ ...rest, ownerUsername: folder?.ownerUsername ?? null });
 }
 
 export async function PUT(
@@ -46,11 +52,10 @@ export async function PUT(
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
   }
 
-  const session = await (await import("@/lib/auth")).auth();
-  if (session?.user) {
+  const { user } = await authenticateRequest(request);
+  if (user) {
     const { isOwnerOfDesign } = await import("@/lib/ownership");
-    const username = (session.user as any).username;
-    const owns = await isOwnerOfDesign(id, username);
+    const owns = await isOwnerOfDesign(id, user.username);
     if (!owns) {
       return NextResponse.json({ error: "Cannot edit another user's design" }, { status: 403 });
     }
@@ -197,7 +202,7 @@ async function autoDiscardComments(designId: string, newContent: string) {
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -210,11 +215,10 @@ export async function DELETE(
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
   }
 
-  const session = await (await import("@/lib/auth")).auth();
-  if (session?.user) {
+  const { user } = await authenticateRequest(request);
+  if (user) {
     const { isOwnerOfDesign } = await import("@/lib/ownership");
-    const username = (session.user as any).username;
-    const owns = await isOwnerOfDesign(id, username);
+    const owns = await isOwnerOfDesign(id, user.username);
     if (!owns) {
       return NextResponse.json({ error: "Cannot edit another user's design" }, { status: 403 });
     }

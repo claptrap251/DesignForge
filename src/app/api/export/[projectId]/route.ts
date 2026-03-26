@@ -27,7 +27,8 @@ export async function GET(
   const format = request.nextUrl.searchParams.get("format") || "md";
 
   switch (format) {
-    case "md": {
+    case "md":
+    case "markdown": {
       const markdown = await exportToMarkdown(projectId);
       return new NextResponse(markdown, {
         headers: {
