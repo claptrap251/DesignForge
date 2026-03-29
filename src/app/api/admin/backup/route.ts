@@ -19,7 +19,7 @@ export async function POST() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const config = getBackupConfig();
+  const config = await getBackupConfig();
   if (!config) {
     return NextResponse.json({ error: "Backup not configured" }, { status: 400 });
   }

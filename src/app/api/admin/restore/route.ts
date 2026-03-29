@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const config = getBackupConfig();
+  const config = await getBackupConfig();
   if (!config) {
     return NextResponse.json({ error: "Backup not configured" }, { status: 400 });
   }
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const client = new GitHubClient();
+    const client = new GitHubClient(config);
     const commitSha = await client.getLatestCommitSha();
     if (!commitSha) {
       return NextResponse.json({ error: "No backup found on this branch" }, { status: 404 });

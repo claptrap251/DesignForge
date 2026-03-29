@@ -32,6 +32,9 @@ export async function addBackupHistoryEntry(entry: BackupHistoryEntry): Promise<
 }
 
 export async function runBackup(type: "auto" | "manual"): Promise<BackupHistoryEntry> {
+  const config = await getBackupConfig();
+  if (!config) throw new Error("Backup not configured");
+
   const { serializeBackup } = await import("@/lib/backup/serialize");
   const { GitHubClient } = await import("@/lib/backup/github");
 
@@ -44,7 +47,7 @@ export async function runBackup(type: "auto" | "manual"): Promise<BackupHistoryE
 
   try {
     const { files, stats } = await serializeBackup();
-    const client = new GitHubClient();
+    const client = new GitHubClient(config);
 
     const treeItems = [];
     for (const file of files) {
@@ -87,9 +90,9 @@ export async function runBackup(type: "auto" | "manual"): Promise<BackupHistoryE
 
 let scheduledTask: ScheduledTask | null = null;
 
-export function startScheduler(): void {
-  const config = getBackupConfig();
-  if (!config) return;
+export async function startScheduler(): Promise<void> {
+  const config = await getBackupConfig();
+  if (!config || !config.enabled) return;
 
   if (scheduledTask) {
     scheduledTask.stop();

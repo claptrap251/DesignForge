@@ -1,5 +1,3 @@
-import { getBackupConfig } from "@/lib/admin";
-
 interface GitHubTreeItem {
   path: string;
   mode: "100644" | "100755" | "040000";
@@ -14,9 +12,7 @@ export class GitHubClient {
   private token: string;
   private branch: string;
 
-  constructor() {
-    const config = getBackupConfig();
-    if (!config) throw new Error("GitHub backup not configured");
+  constructor(config: { apiUrl: string; repo: string; token: string; branch: string }) {
     this.apiUrl = config.apiUrl;
     this.repo = config.repo;
     this.token = config.token;
