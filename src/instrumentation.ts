@@ -6,6 +6,9 @@ export async function register() {
     const { startScheduler } = await import("@/lib/backup/scheduler");
     await startScheduler();
 
+    const { startScrapeScheduler } = await import("@/lib/scraper/scheduler");
+    await startScrapeScheduler();
+
     const { runSharedProjectsMigration } = await import("@/lib/migration");
     await runSharedProjectsMigration();
   }
