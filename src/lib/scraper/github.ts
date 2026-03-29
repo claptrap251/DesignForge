@@ -59,7 +59,7 @@ export class GitHubScraper {
       const res = await this.request(url);
       const data = await res.json();
 
-      yield data.map((r: any) => ({
+      yield data.map((r: { full_name: string; default_branch: string }) => ({
         fullName: r.full_name,
         defaultBranch: r.default_branch,
       }));
@@ -74,7 +74,7 @@ export class GitHubScraper {
     await this.waitForRateLimit();
     const res = await this.request(`${this.apiUrl}/repos/${owner}/${repo}/branches?per_page=100`);
     const data = await res.json();
-    return data.map((b: any) => b.name);
+    return data.map((b: { name: string }) => b.name);
   }
 
   async getBranchSha(owner: string, repo: string, branch: string): Promise<string | null> {
@@ -94,7 +94,7 @@ export class GitHubScraper {
       `${this.apiUrl}/repos/${owner}/${repo}/git/trees/${sha}?recursive=1`
     );
     const data = await res.json();
-    return data.tree.map((e: any) => ({
+    return data.tree.map((e: { path: string; type: string; sha: string; size?: number }) => ({
       path: e.path,
       type: e.type,
       sha: e.sha,

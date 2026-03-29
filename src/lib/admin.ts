@@ -5,6 +5,7 @@ import { decrypt } from "@/lib/crypto";
  * Check if the current session user is the admin.
  * Admin is determined by ADMIN_USERNAME env var.
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function isAdmin(session: any): boolean {
   const adminUsername = process.env.ADMIN_USERNAME;
   if (!adminUsername) return false;

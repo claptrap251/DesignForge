@@ -162,8 +162,8 @@ export async function runScrape(
         indexData.set(repoName, filePaths);
         result.reposScraped++;
         log.push(`[${repo.repoFullName}] Scraped ${mdFiles.length} files`);
-      } catch (err: any) {
-        log.push(`[${repo.repoFullName}] Error: ${err.message}`);
+      } catch (err: unknown) {
+        log.push(`[${repo.repoFullName}] Error: ${err instanceof Error ? err.message : String(err)}`);
         result.reposSkipped++;
       }
     }
@@ -182,10 +182,10 @@ export async function runScrape(
     } else if (result.reposScraped === 0 && target.repos.length > 0) {
       result.status = "failed";
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     result.status = "failed";
-    result.error = err.message;
-    log.push(`Fatal error: ${err.message}`);
+    result.error = err instanceof Error ? err.message : String(err);
+    log.push(`Fatal error: ${result.error}`);
   }
 
   await prisma.scrapeRun.update({

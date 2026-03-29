@@ -40,7 +40,7 @@ export async function startScrapeScheduler(): Promise<void> {
   }
 }
 
-export async function runScrapeNow(targetId: string): Promise<any> {
+export async function runScrapeNow(targetId: string): Promise<unknown> {
   const { runScrape } = await import("./engine");
   return runScrape(targetId, "manual");
 }
