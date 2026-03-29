@@ -27,8 +27,9 @@ model Project {
   owner       User?       @relation(fields: [ownerId], references: [id], onDelete: SetNull)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-  folders     Folder[]
-  shareLinks  ShareLink[]
+  folders       Folder[]
+  shareLinks    ShareLink[]
+  scrapeTargets ScrapeTarget[]
 }
 
 model Folder {
@@ -118,4 +119,61 @@ model ShareLink {
   passwordHash String?
   expiresAt    DateTime?
   createdAt    DateTime  @default(now())
+}
+
+model BackupConfig {
+  id             String   @id @default(cuid())
+  apiUrl         String   @default("https://api.github.com")
+  repo           String
+  encryptedToken String
+  branch         String   @default("main")
+  cronSchedule   String   @default("0 2 * * *")
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ScrapeTarget {
+  id             String       @id @default(cuid())
+  name           String
+  githubType     String
+  githubName     String
+  apiUrl         String       @default("https://api.github.com")
+  encryptedToken String
+  cronSchedule   String       @default("0 */12 * * *")
+  enabled        Boolean      @default(true)
+  projectId      String
+  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  repos          ScrapeRepo[]
+  runs           ScrapeRun[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model ScrapeRepo {
+  id            String       @id @default(cuid())
+  targetId      String
+  target        ScrapeTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  repoFullName  String
+  branch        String
+  defaultBranch String
+  enabled       Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+}
+
+model ScrapeRun {
+  id            String       @id @default(cuid())
+  targetId      String
+  target        ScrapeTarget @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  trigger       String
+  status        String
+  filesFound    Int          @default(0)
+  filesUpdated  Int          @default(0)
+  filesCreated  Int          @default(0)
+  reposScraped  Int          @default(0)
+  reposSkipped  Int          @default(0)
+  error         String?
+  log           String?
+  startedAt     DateTime     @default(now())
+  completedAt   DateTime?
 }
