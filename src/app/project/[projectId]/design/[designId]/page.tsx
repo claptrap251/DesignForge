@@ -345,7 +345,12 @@ export default function DesignViewerPage() {
                 {design.folderPath.map((f: { id: string; name: string }, i: number) => (
                   <span key={f.id} className="flex items-center gap-1">
                     {i > 0 && <span>/</span>}
-                    <span>{f.name}</span>
+                    <button
+                      onClick={() => router.push(`/project/${projectId}?folder=${f.id}`)}
+                      className="hover:text-indigo-500 dark:hover:text-indigo-400 hover:underline"
+                    >
+                      {f.name}
+                    </button>
                   </span>
                 ))}
                 <span>/</span>
