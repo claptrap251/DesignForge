@@ -111,7 +111,7 @@ export default function MarkdownViewer({
           }`}
           onClick={handleContentClick}
         >
-          <article className="prose prose-lg max-w-none leading-relaxed prose-h1:text-3xl prose-h1:mt-10 prose-h1:mb-6 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-5 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-p:my-5 prose-p:leading-8 prose-li:my-2 prose-li:leading-7 prose-ul:my-5 prose-ol:my-5 prose-blockquote:my-6 prose-blockquote:pl-5 prose-hr:my-10 prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-pre:my-8 prose-pre:p-5 prose-table:my-8 prose-img:my-8 prose-figure:my-8" style={{ color: 'var(--text-primary)', '--tw-prose-headings': 'var(--text-primary)', '--tw-prose-links': 'var(--accent)', '--tw-prose-bold': 'var(--text-primary)', '--tw-prose-code': 'var(--text-primary)', '--tw-prose-pre-bg': '#1a1a2e', '--tw-prose-pre-code': '#e5e7eb', '--tw-prose-quotes': 'var(--text-secondary)', '--tw-prose-counters': 'var(--text-secondary)', '--tw-prose-bullets': 'var(--text-tertiary)' } as React.CSSProperties}>
+          <article className="prose prose-lg max-w-none leading-relaxed prose-h1:text-3xl prose-h1:mt-10 prose-h1:mb-6 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-5 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-p:my-5 prose-p:leading-8 prose-li:my-2 prose-li:leading-7 prose-ul:my-5 prose-ol:my-5 prose-blockquote:my-6 prose-blockquote:pl-5 prose-hr:my-10 prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-pre:my-8 prose-pre:p-5 prose-table:my-8 prose-img:my-8 prose-figure:my-8">
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkSourceLines]}
               rehypePlugins={[rehypeSlug]}
