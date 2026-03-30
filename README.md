@@ -90,10 +90,20 @@ Full dark mode support across all surfaces, toggleable from the header.
 
 ![Dark Mode](docs/screenshots/dark-mode.png)
 
-### Admin Backup & Restore
-Admin page with backup history, manual trigger, restore controls, and GitHub configuration.
+### Admin — Backup & Restore
+Backup configuration, manual trigger, restore controls. Config stored in database with encrypted tokens.
 
-![Admin](docs/screenshots/admin.png)
+![Admin Backup](docs/screenshots/admin.png)
+
+### Admin — GitHub Scraper
+Configure scrape targets, select repos and branches, view scrape history. Supports multiple targets.
+
+![Admin Scraper](docs/screenshots/admin-scraper.png)
+
+### API Tokens
+Generate and manage API tokens for CLI and machine access.
+
+![API Tokens](docs/screenshots/api-tokens.png)
 
 ### Login
 Clean authentication with username/password. No external auth providers needed.
