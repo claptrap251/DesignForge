@@ -56,16 +56,18 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Permission model: only the folder-tree owner may upload designs.
   const { user } = await authenticateRequest(request);
-  if (user) {
-    const { isOwnerOfFolder } = await import("@/lib/ownership");
-    const owns = await isOwnerOfFolder(folderId!, user.username);
-    if (!owns) {
-      return NextResponse.json(
-        { error: "Cannot upload to another user's folder" },
-        { status: 403 }
-      );
-    }
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const { isOwnerOfFolder } = await import("@/lib/ownership");
+  const owns = await isOwnerOfFolder(folderId!, user.username);
+  if (!owns) {
+    return NextResponse.json(
+      { error: "Cannot upload to another user's folder" },
+      { status: 403 }
+    );
   }
 
   let filePath: string | null = null;
