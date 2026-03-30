@@ -120,16 +120,16 @@ function Spinner() {
 }
 
 function Badge({ children, color }: { children: React.ReactNode; color: "blue" | "purple" | "green" | "red" | "yellow" | "gray" }) {
-  const colors: Record<string, string> = {
-    blue: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
-    purple: "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300",
-    green: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300",
-    red: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
-    yellow: "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300",
-    gray: "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300",
+  const colorStyles: Record<string, { backgroundColor: string; color: string }> = {
+    blue: { backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' },
+    purple: { backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' },
+    green: { backgroundColor: 'var(--success-bg)', color: 'var(--success)' },
+    red: { backgroundColor: 'var(--danger-bg)', color: 'var(--danger)' },
+    yellow: { backgroundColor: 'var(--warning-bg)', color: 'var(--warning)' },
+    gray: { backgroundColor: 'var(--badge-draft-bg)', color: 'var(--badge-draft)' },
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[color]}`}>
+    <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium" style={colorStyles[color]}>
       {children}
     </span>
   );
@@ -159,7 +159,8 @@ function ScheduleDropdown({
             onCustomChange(e.target.value);
           }
         }}
-        className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+        className="w-full rounded-lg px-3 py-2 text-sm"
+        style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
       >
         {SCHEDULE_PRESETS.map((p) => (
           <option key={p.value} value={p.value}>
@@ -173,7 +174,8 @@ function ScheduleDropdown({
           value={customValue}
           onChange={(e) => onCustomChange(e.target.value)}
           placeholder="0 */12 * * *"
-          className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2 font-mono"
+          className="w-full rounded-lg px-3 py-2 text-sm font-mono"
+          style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
         />
       )}
     </div>
@@ -717,12 +719,12 @@ export default function AdminPage() {
   /* ---- Loading state ---- */
   if (status === "loading" || !dataLoaded) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
         <Header session={session} isAdmin />
         <div className="max-w-5xl mx-auto px-4 py-12">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48" />
-            <div className="h-40 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+            <div className="h-8 rounded w-48" style={{ backgroundColor: 'var(--border-subtle)' }} />
+            <div className="h-40 rounded-lg" style={{ backgroundColor: 'var(--border-subtle)' }} />
           </div>
         </div>
       </div>
@@ -730,44 +732,45 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
       <Header session={session} isAdmin />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Admin</h1>
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Admin</h1>
 
         {/* ---- Message banner ---- */}
         {message && (
           <div
-            className={`rounded-lg p-4 text-sm font-medium ${
-              message.type === "success"
-                ? "bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                : "bg-red-50 text-red-800 dark:bg-red-900/30 dark:text-red-300"
-            }`}
+            className="rounded-lg p-4 text-sm font-medium"
+            style={{
+              backgroundColor: message.type === "success" ? 'var(--success-bg)' : 'var(--danger-bg)',
+              color: message.type === "success" ? 'var(--success)' : 'var(--danger)',
+              borderRadius: '4px',
+            }}
           >
             {message.text}
           </div>
         )}
 
         {/* ---- Tab navigation ---- */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
+        <div className="flex border-b" style={{ borderColor: 'var(--border-subtle)' }}>
           <button
             onClick={() => { setActiveTab("backup"); setMessage(null); }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-              activeTab === "backup"
-                ? "border-orange-500 text-orange-600 dark:text-orange-400"
-                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-            }`}
+            className="px-4 py-2 text-sm font-medium border-b-2 transition"
+            style={{
+              borderColor: activeTab === "backup" ? 'var(--accent)' : 'transparent',
+              color: activeTab === "backup" ? 'var(--text-primary)' : 'var(--text-tertiary)',
+            }}
           >
             Backup
           </button>
           <button
             onClick={() => { setActiveTab("scraper"); setMessage(null); }}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-              activeTab === "scraper"
-                ? "border-orange-500 text-orange-600 dark:text-orange-400"
-                : "border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:border-gray-300 dark:hover:border-gray-600"
-            }`}
+            className="px-4 py-2 text-sm font-medium border-b-2 transition"
+            style={{
+              borderColor: activeTab === "scraper" ? 'var(--accent)' : 'transparent',
+              color: activeTab === "scraper" ? 'var(--text-primary)' : 'var(--text-tertiary)',
+            }}
           >
             GitHub Scraper
           </button>
@@ -779,51 +782,55 @@ export default function AdminPage() {
         {activeTab === "backup" && (
           <div className="space-y-6">
             {/* ---- Config form ---- */}
-            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-4">
-              <h2 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Configuration</h2>
+            <div className="rounded-lg p-5 space-y-4" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+              <h2 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Configuration</h2>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API URL</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>API URL</label>
                   <input
                     type="text"
                     value={cfgApiUrl}
                     onChange={(e) => setCfgApiUrl(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                    className="w-full rounded-lg px-3 py-2 text-sm"
+                    style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Repository</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Repository</label>
                   <input
                     type="text"
                     value={cfgRepo}
                     onChange={(e) => setCfgRepo(e.target.value)}
                     placeholder="owner/repo"
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                    className="w-full rounded-lg px-3 py-2 text-sm"
+                    style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Branch</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Branch</label>
                   <input
                     type="text"
                     value={cfgBranch}
                     onChange={(e) => setCfgBranch(e.target.value)}
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                    className="w-full rounded-lg px-3 py-2 text-sm"
+                    style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Token {config?.configured && <span className="text-gray-400 dark:text-gray-500 font-normal">({config?.tokenPreview})</span>}
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                    Token {config?.configured && <span style={{ color: 'var(--text-tertiary)' }} className="font-normal">({config?.tokenPreview})</span>}
                   </label>
                   <input
                     type="password"
                     value={cfgToken}
                     onChange={(e) => setCfgToken(e.target.value)}
                     placeholder={config?.configured ? "Leave empty to keep current" : "ghp_..."}
-                    className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                    className="w-full rounded-lg px-3 py-2 text-sm"
+                    style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Schedule</label>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Schedule</label>
                   <ScheduleDropdown
                     value={cfgSchedule}
                     onChange={setCfgSchedule}
@@ -839,15 +846,16 @@ export default function AdminPage() {
                       onChange={(e) => setCfgEnabled(e.target.checked)}
                       className="sr-only peer"
                     />
-                    <div className="w-9 h-5 bg-gray-300 dark:bg-gray-600 peer-checked:bg-green-500 rounded-full transition peer-focus:ring-2 peer-focus:ring-green-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                    <div className="w-9 h-5 rounded-full transition after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" style={{ backgroundColor: cfgEnabled ? 'var(--success)' : 'var(--badge-draft)' }} />
                   </label>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Enabled</span>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Enabled</span>
                 </div>
               </div>
               <button
                 onClick={saveBackupConfig}
                 disabled={busy || !cfgRepo}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                style={{ backgroundColor: 'var(--accent)' }}
               >
                 {busy ? <><Spinner /> Saving...</> : "Save Configuration"}
               </button>
@@ -856,27 +864,28 @@ export default function AdminPage() {
             {/* ---- Two-column: Backup + Restore ---- */}
             <div className="grid lg:grid-cols-2 gap-6">
               {/* ---- Left: Backup ---- */}
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-4">
-                <h2 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Backup</h2>
+              <div className="rounded-lg p-5 space-y-4" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+                <h2 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Backup</h2>
 
                 <button
                   onClick={runBackup}
                   disabled={busy || !config?.configured}
-                  className="w-full rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="w-full rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  style={{ backgroundColor: 'var(--accent)' }}
                 >
                   {busy ? <><Spinner /> Running...</> : "Run Backup Now"}
                 </button>
 
                 {history.length > 0 ? (
-                  <ul className="divide-y divide-gray-100 dark:divide-gray-700 max-h-72 overflow-y-auto">
+                  <ul className="max-h-72 overflow-y-auto" style={{ borderTop: '1px solid var(--border-subtle)' }}>
                     {history.map((h, i) => (
-                      <li key={i} className="py-2 flex items-center justify-between text-sm">
-                        <span className="text-gray-700 dark:text-gray-300">
+                      <li key={i} className="py-2 flex items-center justify-between text-sm" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>
                           {new Date(h.timestamp).toLocaleString()}
                         </span>
                         <span className="flex items-center gap-2">
-                          <Badge color={h.trigger === "auto" ? "blue" : "purple"}>{h.trigger}</Badge>
-                          <span className="text-gray-500 dark:text-gray-400 text-xs">
+                          <Badge color={h.trigger === "auto" ? "blue" : "yellow"}>{h.trigger}</Badge>
+                          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                             {h.projects}p / {h.images}i
                           </span>
                         </span>
@@ -884,33 +893,33 @@ export default function AdminPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No backup history yet.</p>
+                  <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No backup history yet.</p>
                 )}
               </div>
 
               {/* ---- Right: Restore ---- */}
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-4">
-                <h2 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Restore</h2>
+              <div className="rounded-lg p-5 space-y-4" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+                <h2 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Restore</h2>
 
                 {/* Mode toggle */}
-                <div className="flex rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid var(--border-subtle)' }}>
                   <button
                     onClick={() => setRestoreMode("full")}
-                    className={`flex-1 px-3 py-1.5 text-sm font-medium transition ${
-                      restoreMode === "full"
-                        ? "bg-orange-500 text-white"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
+                    className="flex-1 px-3 py-1.5 text-sm font-medium transition"
+                    style={{
+                      backgroundColor: restoreMode === "full" ? 'var(--accent)' : 'var(--bg-page)',
+                      color: restoreMode === "full" ? 'white' : 'var(--text-secondary)',
+                    }}
                   >
                     Full
                   </button>
                   <button
                     onClick={() => setRestoreMode("selective")}
-                    className={`flex-1 px-3 py-1.5 text-sm font-medium transition ${
-                      restoreMode === "selective"
-                        ? "bg-orange-500 text-white"
-                        : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    }`}
+                    className="flex-1 px-3 py-1.5 text-sm font-medium transition"
+                    style={{
+                      backgroundColor: restoreMode === "selective" ? 'var(--accent)' : 'var(--bg-page)',
+                      color: restoreMode === "selective" ? 'white' : 'var(--text-secondary)',
+                    }}
                   >
                     Selective
                   </button>
@@ -918,8 +927,8 @@ export default function AdminPage() {
 
                 {/* Full mode warning */}
                 {restoreMode === "full" && (
-                  <div className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 p-3">
-                    <p className="text-xs font-medium text-red-800 dark:text-red-300">
+                  <div className="rounded-lg p-3" style={{ backgroundColor: 'var(--danger-bg)', border: '1px solid var(--danger)', borderRadius: '4px' }}>
+                    <p className="text-xs font-medium" style={{ color: 'var(--danger)' }}>
                       Full restore replaces <strong>all</strong> existing projects and images. This action is destructive and cannot be undone.
                     </p>
                   </div>
@@ -929,25 +938,27 @@ export default function AdminPage() {
                 {restoreMode === "selective" && (
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {loadingPreview ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 animate-pulse">Loading projects...</p>
+                      <p className="text-sm animate-pulse" style={{ color: 'var(--text-tertiary)' }}>Loading projects...</p>
                     ) : Object.keys(grouped).length === 0 ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">No projects found in backup.</p>
+                      <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No projects found in backup.</p>
                     ) : (
                       Object.entries(grouped).map(([owner, prjs]) => (
                         <div key={owner}>
-                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+                          <p className="text-xs font-medium uppercase tracking-wider mb-1" style={{ color: 'var(--text-tertiary)' }}>
                             {owner}
                           </p>
                           {prjs.map((p) => (
                             <label
                               key={p.path}
-                              className="flex items-center gap-2 py-1 text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+                              className="flex items-center gap-2 py-1 text-sm cursor-pointer"
+                              style={{ color: 'var(--text-secondary)' }}
                             >
                               <input
                                 type="checkbox"
                                 checked={selectedProjects.includes(p.path)}
                                 onChange={() => toggleProject(p.path)}
-                                className="rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
+                                className="rounded"
+                                style={{ accentColor: 'var(--accent)' }}
                               />
                               <span>{p.name}</span>
                             </label>
@@ -965,7 +976,8 @@ export default function AdminPage() {
                     !config?.configured ||
                     (restoreMode === "selective" && selectedProjects.length === 0)
                   }
-                  className="w-full rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="w-full rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  style={{ backgroundColor: 'var(--accent)' }}
                 >
                   {busy ? <><Spinner /> Restoring...</> : restoreMode === "full" ? "Restore All" : `Restore ${selectedProjects.length} Selected`}
                 </button>
@@ -980,16 +992,16 @@ export default function AdminPage() {
         {activeTab === "scraper" && (
           <div className="space-y-6">
             {/* ---- Target tabs ---- */}
-            <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 dark:border-gray-700 pb-3">
+            <div className="flex flex-wrap items-center gap-2 pb-3" style={{ borderBottom: '1px solid var(--border-subtle)' }}>
               {targets.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => { setActiveTargetId(t.id); setAddingTarget(false); setMessage(null); }}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                    activeTargetId === t.id && !addingTarget
-                      ? "bg-orange-500 text-white"
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                  }`}
+                  className="px-3 py-1.5 rounded-lg text-sm font-medium transition"
+                  style={{
+                    backgroundColor: activeTargetId === t.id && !addingTarget ? 'var(--accent)' : 'var(--bg-code)',
+                    color: activeTargetId === t.id && !addingTarget ? 'white' : 'var(--text-secondary)',
+                  }}
                 >
                   {t.name}
                   {!t.enabled && <span className="ml-1 text-xs opacity-60">(off)</span>}
@@ -1001,11 +1013,11 @@ export default function AdminPage() {
                   resetTargetForm();
                   setMessage(null);
                 }}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
-                  addingTarget
-                    ? "bg-orange-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                }`}
+                className="px-3 py-1.5 rounded-lg text-sm font-medium transition"
+                style={{
+                  backgroundColor: addingTarget ? 'var(--accent)' : 'var(--bg-code)',
+                  color: addingTarget ? 'white' : 'var(--text-secondary)',
+                }}
               >
                 + Add Target
               </button>
@@ -1013,11 +1025,12 @@ export default function AdminPage() {
 
             {/* ---- No targets empty state ---- */}
             {targets.length === 0 && !addingTarget && (
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center">
-                <p className="text-gray-500 dark:text-gray-400 mb-4">No scrape targets configured yet.</p>
+              <div className="rounded-lg p-8 text-center" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+                <p className="mb-4" style={{ color: 'var(--text-tertiary)' }}>No scrape targets configured yet.</p>
                 <button
                   onClick={() => { setAddingTarget(true); resetTargetForm(); }}
-                  className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 transition"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-white transition"
+                  style={{ backgroundColor: 'var(--accent)' }}
                 >
                   + Add Your First Target
                 </button>
@@ -1026,69 +1039,75 @@ export default function AdminPage() {
 
             {/* ---- Target config panel ---- */}
             {(activeTarget || addingTarget) && (
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-4">
-                <h2 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <div className="rounded-lg p-5 space-y-4" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+                <h2 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
                   {addingTarget ? "New Target" : "Target Configuration"}
                 </h2>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Name</label>
                     <input
                       type="text"
                       value={tName}
                       onChange={(e) => setTName(e.target.value)}
                       placeholder="My Org"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                      className="w-full rounded-lg px-3 py-2 text-sm"
+                      style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Type</label>
                     <select
                       value={tType}
                       onChange={(e) => setTType(e.target.value as "org" | "user")}
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                      className="w-full rounded-lg px-3 py-2 text-sm"
+                      style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                     >
                       <option value="org">Organization</option>
                       <option value="user">User</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">GitHub Name</label>
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>GitHub Name</label>
                     <input
                       type="text"
                       value={tGhName}
                       onChange={(e) => setTGhName(e.target.value)}
                       placeholder="my-org"
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                      className="w-full rounded-lg px-3 py-2 text-sm"
+                      style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">API URL</label>
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>API URL</label>
                     <input
                       type="text"
                       value={tApiUrl}
                       onChange={(e) => setTApiUrl(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                      className="w-full rounded-lg px-3 py-2 text-sm"
+                      style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Token {!addingTarget && activeTarget && <span className="text-gray-400 dark:text-gray-500 font-normal">({activeTarget.tokenPreview})</span>}
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                      Token {!addingTarget && activeTarget && <span className="font-normal" style={{ color: 'var(--text-tertiary)' }}>({activeTarget.tokenPreview})</span>}
                     </label>
                     <input
                       type="password"
                       value={tToken}
                       onChange={(e) => setTToken(e.target.value)}
                       placeholder={addingTarget ? "ghp_..." : "Leave empty to keep current"}
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                      className="w-full rounded-lg px-3 py-2 text-sm"
+                      style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Project</label>
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Project</label>
                     <select
                       value={tProject}
                       onChange={(e) => setTProject(e.target.value)}
-                      className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm px-3 py-2"
+                      className="w-full rounded-lg px-3 py-2 text-sm"
+                      style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                     >
                       <option value="">Select project...</option>
                       {projects.map((p) => (
@@ -1099,7 +1118,7 @@ export default function AdminPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Schedule</label>
+                    <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>Schedule</label>
                     <ScheduleDropdown
                       value={tSchedule}
                       onChange={setTSchedule}
@@ -1116,9 +1135,9 @@ export default function AdminPage() {
                           onChange={(e) => setTEnabled(e.target.checked)}
                           className="sr-only peer"
                         />
-                        <div className="w-9 h-5 bg-gray-300 dark:bg-gray-600 peer-checked:bg-green-500 rounded-full transition peer-focus:ring-2 peer-focus:ring-green-300 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" />
+                        <div className="w-9 h-5 rounded-full transition after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full" style={{ backgroundColor: tEnabled ? 'var(--success)' : 'var(--badge-draft)' }} />
                       </label>
-                      <span className="text-sm text-gray-700 dark:text-gray-300">Enabled</span>
+                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Enabled</span>
                     </div>
                   )}
                 </div>
@@ -1126,7 +1145,8 @@ export default function AdminPage() {
                   <button
                     onClick={saveTarget}
                     disabled={busy || !tGhName || (!addingTarget ? false : !tToken || !tProject)}
-                    className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    style={{ backgroundColor: 'var(--accent)' }}
                   >
                     {busy ? <><Spinner /> Saving...</> : addingTarget ? "Create Target" : "Save"}
                   </button>
@@ -1135,14 +1155,16 @@ export default function AdminPage() {
                       <button
                         onClick={fetchRepos}
                         disabled={loadingRepos}
-                        className="rounded-lg bg-gray-600 px-4 py-2 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+                        style={{ border: '1px solid var(--border-medium)', color: 'var(--text-secondary)', backgroundColor: 'var(--bg-page)' }}
                       >
                         {loadingRepos ? <><Spinner /> Fetching...</> : "Fetch Repos"}
                       </button>
                       <button
                         onClick={deleteTarget}
                         disabled={busy}
-                        className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition ml-auto"
+                        className="rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition ml-auto"
+                        style={{ backgroundColor: 'var(--danger-bg)', color: 'var(--danger)', border: '1px solid var(--danger)' }}
                       >
                         Delete
                       </button>
@@ -1151,7 +1173,8 @@ export default function AdminPage() {
                   {addingTarget && (
                     <button
                       onClick={() => { setAddingTarget(false); setMessage(null); }}
-                      className="rounded-lg bg-gray-200 dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                      className="rounded-lg px-4 py-2 text-sm font-medium transition"
+                      style={{ backgroundColor: 'var(--bg-code)', color: 'var(--text-secondary)' }}
                     >
                       Cancel
                     </button>
@@ -1162,9 +1185,9 @@ export default function AdminPage() {
 
             {/* ---- Repo checklist ---- */}
             {!addingTarget && activeTarget && (fetchedRepos.length > 0 || activeTarget.repos.length > 0) && (
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-4">
+              <div className="rounded-lg p-5 space-y-4" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <h2 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
                     Repositories {checkedCount > 0 && `(${checkedCount} selected)`}
                   </h2>
                   <div className="flex gap-2">
@@ -1180,7 +1203,8 @@ export default function AdminPage() {
                         });
                         setRepoSelections(all);
                       }}
-                      className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                      className="text-xs hover:underline"
+                      style={{ color: 'var(--accent)' }}
                     >
                       Select All
                     </button>
@@ -1194,14 +1218,15 @@ export default function AdminPage() {
                           return next;
                         });
                       }}
-                      className="text-xs text-gray-500 dark:text-gray-400 hover:underline"
+                      className="text-xs hover:underline"
+                      style={{ color: 'var(--text-tertiary)' }}
                     >
                       Deselect All
                     </button>
                   </div>
                 </div>
 
-                <div className="max-h-80 overflow-y-auto divide-y divide-gray-100 dark:divide-gray-700">
+                <div className="max-h-80 overflow-y-auto">
                   {(fetchedRepos.length > 0 ? fetchedRepos : activeTarget.repos.map((r) => ({
                     fullName: r.repoFullName,
                     defaultBranch: r.defaultBranch,
@@ -1214,24 +1239,25 @@ export default function AdminPage() {
                     const loading = loadingBranches[repo.fullName];
 
                     return (
-                      <div key={repo.fullName} className="py-2 flex items-center gap-3 text-sm">
+                      <div key={repo.fullName} className="py-2 flex items-center gap-3 text-sm" style={{ borderBottom: '1px solid var(--border-subtle)', backgroundColor: checked ? 'var(--success-bg)' : 'transparent' }}>
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={() => toggleRepoCheck(repo.fullName, repo.defaultBranch)}
-                          className="rounded border-gray-300 dark:border-gray-600 text-orange-500 focus:ring-orange-500"
+                          className="rounded"
+                          style={{ accentColor: 'var(--accent)' }}
                         />
-                        <span className="flex-1 text-gray-800 dark:text-gray-200 font-mono text-xs truncate">
+                        <span className="flex-1 font-mono text-xs truncate" style={{ color: 'var(--text-primary)' }}>
                           {repo.fullName}
                         </span>
                         {fetchedRepos.length > 0 && (
-                          <span className="text-gray-400 dark:text-gray-500 text-xs shrink-0">
+                          <span className="text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>
                             {repo.mdFileCount} .md
                           </span>
                         )}
                         {checked && (
                           loading ? (
-                            <span className="text-xs text-gray-400 dark:text-gray-500"><Spinner /> branches</span>
+                            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}><Spinner /> branches</span>
                           ) : branches ? (
                             <select
                               value={sel?.branch || repo.defaultBranch}
@@ -1241,14 +1267,15 @@ export default function AdminPage() {
                                   [repo.fullName]: { ...prev[repo.fullName], branch: e.target.value },
                                 }));
                               }}
-                              className="rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-xs px-2 py-1"
+                              className="rounded text-xs px-2 py-1"
+                              style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                             >
                               {branches.map((b) => (
                                 <option key={b} value={b}>{b}</option>
                               ))}
                             </select>
                           ) : (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">{sel?.branch || repo.defaultBranch}</span>
+                            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{sel?.branch || repo.defaultBranch}</span>
                           )
                         )}
                       </div>
@@ -1259,7 +1286,8 @@ export default function AdminPage() {
                 <button
                   onClick={saveRepoSelections}
                   disabled={savingRepos}
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  style={{ backgroundColor: 'var(--accent)' }}
                 >
                   {savingRepos ? <><Spinner /> Saving...</> : "Save Selections"}
                 </button>
@@ -1268,13 +1296,14 @@ export default function AdminPage() {
 
             {/* ---- Scrape history ---- */}
             {!addingTarget && activeTarget && (
-              <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 space-y-4">
+              <div className="rounded-lg p-5 space-y-4" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Scrape History</h2>
+                  <h2 className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Scrape History</h2>
                   <button
                     onClick={runScrape}
                     disabled={busy}
-                    className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    className="rounded-lg px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed transition"
+                    style={{ backgroundColor: 'var(--accent)' }}
                   >
                     {busy ? <><Spinner /> Running...</> : "Run Now"}
                   </button>
@@ -1284,31 +1313,31 @@ export default function AdminPage() {
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
                       <thead>
-                        <tr className="text-xs text-gray-500 dark:text-gray-400 uppercase border-b border-gray-200 dark:border-gray-700">
+                        <tr className="text-xs uppercase" style={{ color: 'var(--text-tertiary)', borderBottom: '1px solid var(--border-subtle)' }}>
                           <th className="py-2 pr-3">Timestamp</th>
                           <th className="py-2 pr-3">Trigger</th>
                           <th className="py-2 pr-3">Result</th>
                           <th className="py-2 pr-3">Files</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+                      <tbody>
                         {scrapeHistory.map((run) => (
-                          <tr key={run.id}>
-                            <td className="py-2 pr-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                          <tr key={run.id} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                            <td className="py-2 pr-3 whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                               {new Date(run.startedAt).toLocaleString()}
                             </td>
                             <td className="py-2 pr-3">
-                              <Badge color={run.trigger === "auto" ? "blue" : "purple"}>{run.trigger}</Badge>
+                              <Badge color={run.trigger === "auto" ? "blue" : "yellow"}>{run.trigger}</Badge>
                             </td>
                             <td className="py-2 pr-3">
                               <Badge color={run.status === "success" ? "green" : run.status === "running" ? "yellow" : "red"}>
                                 {run.status}
                               </Badge>
                               {run.error && (
-                                <span className="block text-xs text-red-500 dark:text-red-400 mt-0.5 truncate max-w-xs">{run.error}</span>
+                                <span className="block text-xs mt-0.5 truncate max-w-xs" style={{ color: 'var(--danger)' }}>{run.error}</span>
                               )}
                             </td>
-                            <td className="py-2 pr-3 text-gray-500 dark:text-gray-400 text-xs whitespace-nowrap">
+                            <td className="py-2 pr-3 text-xs whitespace-nowrap" style={{ color: 'var(--text-tertiary)' }}>
                               +{run.filesCreated} / ~{run.filesUpdated} / -{run.filesDeleted}
                             </td>
                           </tr>
@@ -1317,7 +1346,7 @@ export default function AdminPage() {
                     </table>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">No scrape runs yet.</p>
+                  <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>No scrape runs yet.</p>
                 )}
               </div>
             )}

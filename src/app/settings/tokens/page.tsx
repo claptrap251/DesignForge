@@ -123,8 +123,8 @@ export default function TokensPage() {
   /* ---- Loading / auth states ---- */
   if (status === "loading") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+      <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+        <p style={{ color: 'var(--text-tertiary)' }}>Loading...</p>
       </div>
     );
   }
@@ -132,18 +132,19 @@ export default function TokensPage() {
   if (!session) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
       <Header session={session} isAdmin={isAdminUser} />
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
             API Tokens
           </h1>
           {!showForm && !newToken && (
             <button
               onClick={() => setShowForm(true)}
-              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+              className="rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:outline-none"
+              style={{ backgroundColor: 'var(--accent)' }}
             >
               Generate Token
             </button>
@@ -152,24 +153,26 @@ export default function TokensPage() {
 
         {/* ---- New token display (shown once) ---- */}
         {newToken && (
-          <div className="mb-6 rounded-lg border border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/30 p-4">
-            <p className="mb-2 text-sm font-semibold text-green-800 dark:text-green-300">
+          <div className="mb-6 rounded-lg p-4" style={{ border: '1px solid var(--warning)', backgroundColor: 'var(--warning-bg)', borderRadius: '4px' }}>
+            <p className="mb-2 text-sm font-semibold" style={{ color: 'var(--warning)' }}>
               Save this token — it won&apos;t be shown again
             </p>
             <div className="flex items-center gap-2">
-              <code className="flex-1 overflow-x-auto rounded bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700 font-mono">
+              <code className="flex-1 overflow-x-auto rounded px-3 py-2 text-sm font-mono" style={{ backgroundColor: 'var(--bg-code)', color: 'var(--text-primary)', border: '1px solid var(--border-subtle)', borderRadius: '4px' }}>
                 {newToken}
               </code>
               <button
                 onClick={copyToken}
-                className="shrink-0 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium text-white transition-colors"
+                style={{ backgroundColor: 'var(--accent)' }}
               >
                 {copied ? "Copied!" : "Copy"}
               </button>
             </div>
             <button
               onClick={() => setNewToken(null)}
-              className="mt-3 text-sm text-green-700 dark:text-green-400 underline hover:no-underline"
+              className="mt-3 text-sm underline hover:no-underline"
+              style={{ color: 'var(--accent)' }}
             >
               Dismiss
             </button>
@@ -178,8 +181,8 @@ export default function TokensPage() {
 
         {/* ---- Generate token form ---- */}
         {showForm && (
-          <div className="mb-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <div className="mb-6 rounded-lg p-4" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+            <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
               Token Name
             </label>
             <div className="flex items-center gap-2">
@@ -188,7 +191,8 @@ export default function TokensPage() {
                 value={tokenName}
                 onChange={(e) => setTokenName(e.target.value)}
                 placeholder="e.g. My CLI Token"
-                className="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="flex-1 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                style={{ borderWidth: '1px', borderStyle: 'solid', borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)', borderRadius: '4px' }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleGenerate();
                 }}
@@ -197,7 +201,8 @@ export default function TokensPage() {
               <button
                 onClick={handleGenerate}
                 disabled={generating || !tokenName.trim()}
-                className="shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="shrink-0 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none"
+                style={{ backgroundColor: 'var(--accent)' }}
               >
                 {generating ? "Generating..." : "Create"}
               </button>
@@ -206,7 +211,8 @@ export default function TokensPage() {
                   setShowForm(false);
                   setTokenName("");
                 }}
-                className="shrink-0 rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover-warm"
+                style={{ border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}
               >
                 Cancel
               </button>
@@ -216,42 +222,42 @@ export default function TokensPage() {
 
         {/* ---- Token list ---- */}
         {loading ? (
-          <p className="text-gray-500 dark:text-gray-400">Loading tokens...</p>
+          <p style={{ color: 'var(--text-tertiary)' }}>Loading tokens...</p>
         ) : tokens.length === 0 ? (
-          <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-8 text-center">
-            <p className="text-gray-500 dark:text-gray-400">
+          <div className="rounded-lg p-8 text-center" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+            <p style={{ color: 'var(--text-tertiary)' }}>
               No API tokens yet. Generate one to get started.
             </p>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700/50">
+          <div className="overflow-hidden rounded-lg" style={{ border: '1px solid var(--border-subtle)', backgroundColor: 'var(--bg-page)', borderRadius: '4px' }}>
+            <table className="min-w-full">
+              <thead style={{ backgroundColor: 'var(--bg-sidebar)' }}>
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
                     Name
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
                     Created
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
                     Last Used
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <th className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody>
                 {tokens.map((token) => (
-                  <tr key={token.id}>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                  <tr key={token.id} style={{ borderTop: '1px solid var(--border-subtle)' }}>
+                    <td className="whitespace-nowrap px-4 py-3 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                       {token.name}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                       {new Date(token.createdAt).toLocaleDateString()}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+                    <td className="whitespace-nowrap px-4 py-3 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                       {token.lastUsedAt
                         ? new Date(token.lastUsedAt).toLocaleDateString()
                         : "Never"}
@@ -259,18 +265,20 @@ export default function TokensPage() {
                     <td className="whitespace-nowrap px-4 py-3 text-right text-sm">
                       {deletingId === token.id ? (
                         <span className="inline-flex items-center gap-2">
-                          <span className="text-gray-500 dark:text-gray-400">
+                          <span style={{ color: 'var(--text-tertiary)' }}>
                             Delete?
                           </span>
                           <button
                             onClick={() => handleDelete(token.id)}
-                            className="font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                            className="font-medium"
+                            style={{ color: 'var(--danger)' }}
                           >
                             Yes
                           </button>
                           <button
                             onClick={() => setDeletingId(null)}
-                            className="font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                            className="font-medium"
+                            style={{ color: 'var(--text-tertiary)' }}
                           >
                             No
                           </button>
@@ -278,7 +286,8 @@ export default function TokensPage() {
                       ) : (
                         <button
                           onClick={() => setDeletingId(token.id)}
-                          className="font-medium text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
+                          className="font-medium"
+                          style={{ color: 'var(--danger)' }}
                         >
                           Delete
                         </button>
