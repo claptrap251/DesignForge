@@ -69,7 +69,7 @@ export default function LineGutter({
   };
 
   return (
-    <div ref={gutterRef} className="select-none border-r border-gray-200 bg-gray-50 py-6" style={{ minWidth: "2.5rem" }}>
+    <div ref={gutterRef} className="select-none border-r py-6" style={{ minWidth: "2.5rem", borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-sidebar)' }}>
       {Array.from({ length: totalLines }, (_, i) => {
         const line = i + 1;
         const lineComments = commentsAtLine(line);
@@ -79,9 +79,14 @@ export default function LineGutter({
           <div
             key={line}
             className={`relative flex items-center justify-end pr-1 text-xs leading-6 ${
-              isAddMode ? "cursor-pointer hover:bg-indigo-50" : ""
-            } ${hoveredLine === line ? "bg-indigo-50" : ""}`}
-            style={{ height: "1.5rem" }}
+              isAddMode ? "cursor-pointer" : ""
+            }`}
+            style={{
+              height: "1.5rem",
+              ...((isAddMode && hoveredLine === line) || hoveredLine === line
+                ? { backgroundColor: 'var(--accent-bg)' }
+                : {}),
+            }}
             onMouseEnter={() => setHoveredLine(line)}
             onMouseLeave={() => setHoveredLine(null)}
             onClick={() => handleLineClick(line)}
@@ -93,21 +98,21 @@ export default function LineGutter({
                   onSelectComment(lineComments[0].comment.id);
                   scrollToLine(line);
                 }}
-                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white ${
-                  lineComments[0].comment.resolved ? "bg-green-500" : "bg-indigo-600"
-                } ${
-                  selectedCommentId === lineComments[0].comment.id ? "ring-2 ring-red-400" : ""
-                }`}
+                className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                style={{
+                  backgroundColor: lineComments[0].comment.resolved ? 'var(--success)' : 'var(--accent)',
+                  ...(selectedCommentId === lineComments[0].comment.id ? { boxShadow: '0 0 0 2px rgba(239, 68, 68, 0.5)' } : {}),
+                }}
                 title={`Pin #${lineComments[0].comment.pinNumber}`}
               >
                 {lineComments[0].comment.pinNumber}
               </button>
             ) : isAddMode && hoveredLine === line ? (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-600">
+              <span className="flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}>
                 +
               </span>
             ) : (
-              <span className="text-gray-300">{line}</span>
+              <span style={{ color: 'var(--border-medium)' }}>{line}</span>
             )}
           </div>
         );

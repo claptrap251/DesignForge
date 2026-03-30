@@ -15,7 +15,7 @@ function ShareThemeToggle() {
     else setTheme("light");
   };
   return (
-    <button onClick={cycle} className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700" title={`Theme: ${theme}`}>
+    <button onClick={cycle} className="rounded-lg p-2" style={{ color: 'var(--text-tertiary)' }} title={`Theme: ${theme}`}>
       {theme === "light" && (
         <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="5" /><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg>
       )}
@@ -73,8 +73,8 @@ export default function SharePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--accent)' }}></div>
       </div>
     );
   }
@@ -85,12 +85,12 @@ export default function SharePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <h2 className="text-xl font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
             Link Unavailable
           </h2>
-          <p className="text-gray-500">{error}</p>
+          <p style={{ color: 'var(--text-tertiary)' }}>{error}</p>
         </div>
       </div>
     );
@@ -101,15 +101,15 @@ export default function SharePage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
       {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <header className="border-b" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-page)' }}>
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-xl font-bold text-indigo-600">DesignForge</span>
-            <span className="text-gray-300 dark:text-gray-600">|</span>
-            <span className="text-gray-600 dark:text-gray-300 font-medium">{project?.name}</span>
-            <span className="text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded">
+            <span className="text-xl font-bold" style={{ color: 'var(--accent)' }}>DesignForge</span>
+            <span style={{ color: 'var(--border-subtle)' }}>|</span>
+            <span className="font-medium" style={{ color: 'var(--text-secondary)' }}>{project?.name}</span>
+            <span className="text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}>
               Shared
             </span>
           </div>
@@ -119,8 +119,8 @@ export default function SharePage() {
 
       <div className="flex">
         {/* Folder list */}
-        <div className="w-60 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 min-h-[calc(100vh-4rem)] p-4">
-          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+        <div className="w-60 border-r min-h-[calc(100vh-4rem)] p-4" style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-subtle)' }}>
+          <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--text-tertiary)' }}>
             Folders
           </h3>
           {project?.folders?.map((folder: any) => (
@@ -129,9 +129,14 @@ export default function SharePage() {
               onClick={() => setActiveFolder(folder.id)}
               className={`w-full text-left px-3 py-2 rounded-lg text-sm mb-1 transition ${
                 activeFolder === folder.id
-                  ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 font-medium"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  ? "font-medium"
+                  : ""
               }`}
+              style={
+                activeFolder === folder.id
+                  ? { backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }
+                  : { color: 'var(--text-secondary)' }
+              }
             >
               {folder.name}
             </button>
@@ -140,7 +145,7 @@ export default function SharePage() {
 
         {/* Content */}
         <main className="flex-1 p-6">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+          <h2 className="text-xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
             {activeFolderData?.name || "Select a folder"}
           </h2>
           {activeFolderData ? (
@@ -152,7 +157,7 @@ export default function SharePage() {
               shareToken={token}
             />
           ) : (
-            <p className="text-gray-500 dark:text-gray-400">Select a folder to view designs</p>
+            <p style={{ color: 'var(--text-tertiary)' }}>Select a folder to view designs</p>
           )}
         </main>
       </div>

@@ -43,12 +43,19 @@ function FolderTreeItem({
         disabled={isDisabled}
         className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors ${
           isDisabled
-            ? "text-gray-400 dark:text-gray-500 cursor-not-allowed"
+            ? "cursor-not-allowed"
             : isSelected
-            ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-medium"
-            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+            ? "font-medium"
+            : "cursor-pointer"
         }`}
-        style={{ paddingLeft: `${level * 20 + 8}px` }}
+        style={{
+          paddingLeft: `${level * 20 + 8}px`,
+          ...(isDisabled
+            ? { color: 'var(--text-tertiary)' }
+            : isSelected
+            ? { backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }
+            : { color: 'var(--text-secondary)' }),
+        }}
       >
         {hasChildren ? (
           <span
@@ -72,7 +79,8 @@ function FolderTreeItem({
           <span className="h-4 w-4 shrink-0" />
         )}
         <svg
-          className={`h-4 w-4 shrink-0 ${isSelected ? "text-indigo-600 dark:text-indigo-400" : "text-gray-400"}`}
+          className="h-4 w-4 shrink-0"
+          style={{ color: isSelected ? 'var(--accent)' : 'var(--text-tertiary)' }}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -86,10 +94,10 @@ function FolderTreeItem({
         </svg>
         <span className="truncate">
           {folder.name}
-          {isCurrent && <span className="ml-1 text-xs text-gray-400">(current)</span>}
+          {isCurrent && <span className="ml-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>(current)</span>}
         </span>
         {isSelected && (
-          <svg className="ml-auto h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="ml-auto h-4 w-4 shrink-0" style={{ color: 'var(--accent)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
         )}
@@ -130,13 +138,13 @@ export default function FolderPickerModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-xl">
-        <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-1">
+      <div className="relative z-10 w-full max-w-sm rounded-xl border p-5 shadow-xl" style={{ borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-page)' }}>
+        <h3 className="text-base font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>
           {title}
         </h3>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Select a destination folder</p>
+        <p className="text-xs mb-3" style={{ color: 'var(--text-tertiary)' }}>Select a destination folder</p>
 
-        <div className="max-h-64 overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 p-1">
+        <div className="max-h-64 overflow-y-auto rounded-lg border p-1" style={{ borderColor: 'var(--border-subtle)' }}>
           {folders.map((folder) => (
             <FolderTreeItem
               key={folder.id}
@@ -152,14 +160,16 @@ export default function FolderPickerModal({
         <div className="mt-4 flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="rounded-lg border px-3 py-1.5 text-sm font-medium"
+            style={{ borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' }}
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={!selectedId}
-            className="rounded-lg bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-lg px-4 py-1.5 text-sm font-medium text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: 'var(--accent)' }}
           >
             Move
           </button>

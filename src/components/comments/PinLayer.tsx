@@ -144,10 +144,12 @@ export default function PinLayer({
       {newPinPosition && (
         <>
           <div
-            className="absolute z-20 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white shadow-md ring-2 ring-indigo-300"
+            className="absolute z-20 flex h-7 w-7 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full text-xs font-bold text-white shadow-md"
             style={{
               left: `${newPinPosition.x}%`,
               top: `${newPinPosition.y}%`,
+              backgroundColor: 'var(--accent)',
+              boxShadow: '0 0 0 2px var(--accent-bg)',
             }}
           >
             +
