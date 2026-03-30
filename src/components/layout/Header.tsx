@@ -23,7 +23,8 @@ function ThemeToggle() {
   return (
     <button
       onClick={cycle}
-      className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+      className="hover-warm rounded-lg p-2 transition-colors"
+      style={{ color: 'var(--text-secondary)' }}
       title={`Theme: ${theme}`}
       aria-label={`Current theme: ${theme}. Click to cycle.`}
     >
@@ -50,27 +51,18 @@ export default function Header({ session, isAdmin: admin }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <header
+      className="border-b"
+      style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-subtle)' }}
+    >
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <svg
-            className="h-8 w-8 text-indigo-600"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <rect width="32" height="32" rx="8" fill="currentColor" />
-            <path
-              d="M8 12L16 8L24 12V20L16 24L8 20V12Z"
-              stroke="white"
-              strokeWidth="2"
-              fill="none"
-            />
-            <path d="M16 8V24" stroke="white" strokeWidth="2" />
-            <path d="M8 12L24 20" stroke="white" strokeWidth="1.5" />
-            <path d="M24 12L8 20" stroke="white" strokeWidth="1.5" />
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 6C4 4.89543 4.89543 4 6 4H13L16 7H26C27.1046 7 28 7.89543 28 9V26C28 27.1046 27.1046 28 26 28H6C4.89543 28 4 27.1046 4 26V6Z" fill="var(--text-primary)" fillOpacity="0.85"/>
+            <path d="M15 14L18.5 17.5M18.5 17.5L22 14M18.5 17.5V23" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <circle cx="12" cy="18" r="3" stroke="var(--accent)" strokeWidth="2" fill="none"/>
           </svg>
-          <span className="text-xl font-bold text-gray-900 dark:text-gray-100 hidden sm:inline">DesignForge</span>
+          <span className="text-xl font-bold hidden sm:inline" style={{ color: 'var(--text-primary)' }}>DesignForge</span>
         </Link>
 
         {/* Desktop nav */}
@@ -81,23 +73,26 @@ export default function Header({ session, isAdmin: admin }: HeaderProps) {
               {admin && (
                 <Link
                   href="/admin"
-                  className="rounded-lg border border-orange-400 dark:border-orange-500 px-3 py-1.5 text-sm font-semibold text-orange-600 dark:text-orange-400 transition-colors hover:bg-orange-50 dark:hover:bg-orange-900/30"
+                  className="rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors"
+                  style={{ color: 'var(--admin-text)', backgroundColor: 'var(--admin-bg)', border: 'none' }}
                 >
                   Admin
                 </Link>
               )}
               <a
                 href={navUrl("/settings/tokens")}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="hover-warm rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 API Tokens
               </a>
-              <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 {session.user?.name || session.user?.username}
               </span>
               <button
                 onClick={() => signOut()}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="hover-warm rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 Sign out
               </button>
@@ -106,13 +101,17 @@ export default function Header({ session, isAdmin: admin }: HeaderProps) {
             <div className="flex items-center gap-3">
               <Link
                 href="/login"
-                className="rounded-lg px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="hover-warm rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                className="rounded-lg px-3 py-1.5 text-sm font-medium text-white transition-colors focus:outline-none"
+                style={{ backgroundColor: 'var(--accent)' }}
+                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent-hover)')}
+                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'var(--accent)')}
               >
                 Register
               </Link>
@@ -125,7 +124,8 @@ export default function Header({ session, isAdmin: admin }: HeaderProps) {
           <ThemeToggle />
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="rounded-lg p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="hover-warm rounded-lg p-2 transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
             aria-label="Toggle menu"
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -141,16 +141,20 @@ export default function Header({ session, isAdmin: admin }: HeaderProps) {
 
       {/* Mobile dropdown */}
       {menuOpen && (
-        <div className="sm:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 space-y-2">
+        <div
+          className="sm:hidden border-t px-4 py-3 space-y-2"
+          style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-subtle)' }}
+        >
           {session ? (
             <>
-              <p className="text-sm text-gray-700 dark:text-gray-300 truncate">
+              <p className="text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
                 {session.user?.name || session.user?.username}
               </p>
               {admin && (
                 <Link
                   href="/admin"
-                  className="block rounded-lg border border-orange-400 dark:border-orange-500 px-3 py-2 text-sm font-semibold text-orange-600 dark:text-orange-400 text-center hover:bg-orange-50 dark:hover:bg-orange-900/30"
+                  className="block rounded-lg px-3 py-2 text-sm font-semibold text-center transition-colors"
+                  style={{ color: 'var(--admin-text)', backgroundColor: 'var(--admin-bg)', border: 'none' }}
                   onClick={() => setMenuOpen(false)}
                 >
                   Admin
@@ -158,14 +162,16 @@ export default function Header({ session, isAdmin: admin }: HeaderProps) {
               )}
               <a
                 href={navUrl("/settings/tokens")}
-                className="block rounded-md px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="block hover-warm rounded-md px-3 py-2 text-sm transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
                 onClick={() => setMenuOpen(false)}
               >
                 API Tokens
               </a>
               <button
                 onClick={() => signOut()}
-                className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="w-full hover-warm rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 Sign out
               </button>
@@ -174,14 +180,16 @@ export default function Header({ session, isAdmin: admin }: HeaderProps) {
             <>
               <Link
                 href="/login"
-                className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="block hover-warm rounded-lg px-3 py-2 text-sm font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
                 onClick={() => setMenuOpen(false)}
               >
                 Login
               </Link>
               <Link
                 href="/register"
-                className="block rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white text-center hover:bg-indigo-700"
+                className="block rounded-lg px-3 py-2 text-sm font-medium text-white text-center transition-colors"
+                style={{ backgroundColor: 'var(--accent)' }}
                 onClick={() => setMenuOpen(false)}
               >
                 Register

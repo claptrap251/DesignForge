@@ -137,6 +137,10 @@ body {
   padding-left: 1.5em;
 }
 
+.hover-warm:hover {
+  background-color: var(--bg-hover);
+}
+
 /* Code blocks: reset inline code styles inside pre */
 .prose pre code {
   background: transparent;
