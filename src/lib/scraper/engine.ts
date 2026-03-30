@@ -65,7 +65,7 @@ async function upsertDesign(
     data: {
       name,
       type: "MARKDOWN",
-      status: "DRAFT",
+      status: "APPROVED",
       content,
       folderId,
       currentVersion: 1,
