@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { compare } from "bcryptjs";
 import { prisma } from "./db";
-import { auth } from "./auth";
 
 interface AuthenticatedUser {
   id: string;
@@ -11,7 +10,7 @@ interface AuthenticatedUser {
 
 interface AuthResult {
   user: AuthenticatedUser | null;
-  method: "session" | "basic" | "none";
+  method: "session" | "basic" | "bearer" | "none";
 }
 
 /**
@@ -25,6 +24,38 @@ interface AuthResult {
 export async function authenticateRequest(request: NextRequest): Promise<AuthResult> {
   // 1. Check for HTTP Basic Auth header
   const authHeader = request.headers.get("authorization");
+
+  // Priority 1: Bearer token auth (API tokens for CLI)
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const { createHash } = await import("crypto");
+    const hash = createHash("sha256").update(token).digest("hex");
+
+    const apiToken = await prisma.apiToken.findUnique({
+      where: { tokenHash: hash },
+      include: { user: true },
+    });
+
+    if (apiToken) {
+      // Update lastUsedAt
+      await prisma.apiToken.update({
+        where: { id: apiToken.id },
+        data: { lastUsedAt: new Date() },
+      }).catch(() => {});
+
+      return {
+        user: {
+          id: apiToken.user.id,
+          username: apiToken.user.username,
+          name: apiToken.user.name || apiToken.user.username,
+        },
+        method: "bearer" as const,
+      };
+    }
+
+    return { user: null, method: "none" as const };
+  }
+
   if (authHeader?.startsWith("Basic ")) {
     const base64 = authHeader.slice(6);
     let decoded: string;
@@ -58,6 +89,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
   }
 
   // 2. Fall back to session auth (next-auth)
+  const { auth } = await import("./auth");
   const session = await auth();
   if (session?.user?.id) {
     return {
