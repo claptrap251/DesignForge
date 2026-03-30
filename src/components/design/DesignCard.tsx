@@ -37,14 +37,22 @@ export default function DesignCard({
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const isImage = design.type === "image";
   const commentCount = design._count?.comments ?? design.comments?.length ?? 0;
-  const statusConfig: Record<string, { label: string; cls: string }> = {
-    DRAFT: { label: "Draft", cls: "bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300" },
-    IN_REVIEW: { label: "In Review", cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
-    APPROVED: { label: "Approved", cls: "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300" },
-  };
-  const status = statusConfig[design.status || "DRAFT"] || statusConfig.DRAFT;
+
+  const statusStyle = design.status === "APPROVED"
+    ? { color: 'var(--badge-approved)', backgroundColor: 'var(--badge-approved-bg)' }
+    : design.status === "IN_REVIEW"
+    ? { color: 'var(--badge-review)', backgroundColor: 'var(--badge-review-bg)' }
+    : { color: 'var(--badge-draft)', backgroundColor: 'var(--badge-draft-bg)' };
+
+  const statusLabel = design.status === "APPROVED"
+    ? "Approved"
+    : design.status === "IN_REVIEW"
+    ? "In Review"
+    : "Draft";
+
   const createdDate = new Date(design.createdAt).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -82,9 +90,26 @@ export default function DesignCard({
     setConfirming(false);
   };
 
+  const cardStyle = {
+    backgroundColor: 'var(--bg-page)',
+    border: selected
+      ? '1px solid var(--accent)'
+      : '1px solid var(--border-subtle)',
+    borderRadius: '4px',
+    boxShadow: hovered && !selected
+      ? 'rgba(15,15,15,0.1) 0 0 0 1px, rgba(15,15,15,0.1) 0 2px 4px'
+      : selected
+      ? '0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent)'
+      : 'none',
+    transition: 'box-shadow 0.15s ease',
+  };
+
   const cardContent = (
     <>
-      <div className="flex h-40 items-center justify-center bg-gray-50 dark:bg-gray-700">
+      <div
+        className="flex h-40 items-center justify-center"
+        style={{ backgroundColor: 'var(--bg-sidebar)' }}
+      >
         {isImage && design.filePath ? (
           <img
             src={design.filePath}
@@ -92,7 +117,7 @@ export default function DesignCard({
             className="h-full w-full object-cover transition-transform group-hover:scale-105"
           />
         ) : (
-          <div className="flex flex-col items-center gap-2 text-gray-400">
+          <div className="flex flex-col items-center gap-2" style={{ color: 'var(--text-tertiary)' }}>
             <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path
                 strokeLinecap="round"
@@ -100,21 +125,29 @@ export default function DesignCard({
                 d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"
               />
             </svg>
-            <span className="text-xs font-medium">Markdown</span>
+            <span
+              className="text-xs font-medium"
+              style={{ color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-code)', padding: '1px 6px', borderRadius: '3px' }}
+            >
+              Markdown
+            </span>
           </div>
         )}
       </div>
 
       <div className="p-3">
         <div className="flex items-center justify-between gap-2">
-          <h3 className="truncate text-sm font-medium text-gray-900 dark:text-gray-100 group-hover:text-indigo-600">
+          <h3 className="truncate text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
             {design.name}
           </h3>
-          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${status.cls}`}>
-            {status.label}
+          <span
+            className="shrink-0 px-2 py-0.5 text-[10px] font-semibold"
+            style={{ ...statusStyle, borderRadius: '3px' }}
+          >
+            {statusLabel}
           </span>
         </div>
-        <div className="mt-1.5 flex items-center gap-3 text-xs text-gray-400">
+        <div className="mt-1.5 flex items-center gap-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
           <span className="flex items-center gap-1">
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path
@@ -132,11 +165,13 @@ export default function DesignCard({
       {/* Selection checkbox overlay */}
       {selectionMode && (
         <div className="absolute left-2 top-2">
-          <div className={`flex h-5 w-5 items-center justify-center rounded border-2 ${
-            selected
-              ? "border-indigo-500 bg-indigo-500 text-white"
-              : "border-gray-300 dark:border-gray-500 bg-white dark:bg-gray-700"
-          }`}>
+          <div
+            className="flex h-5 w-5 items-center justify-center rounded border-2"
+            style={selected
+              ? { borderColor: 'var(--accent)', backgroundColor: 'var(--accent)', color: '#fff' }
+              : { borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)' }
+            }
+          >
             {selected && (
               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -159,7 +194,8 @@ export default function DesignCard({
             </button>
             <button
               onClick={cancelDelete}
-              className="rounded-md bg-white px-2 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+              className="rounded-md px-2 py-1 text-xs font-medium shadow-sm"
+              style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-secondary)' }}
             >
               Cancel
             </button>
@@ -176,7 +212,8 @@ export default function DesignCard({
               e.stopPropagation();
               setMenuOpen((prev) => !prev);
             }}
-            className="rounded-md bg-white/90 p-1.5 text-gray-500 shadow-sm backdrop-blur-sm hover:bg-gray-100 hover:text-gray-700 dark:bg-gray-800/90 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+            className="rounded-md p-1.5 shadow-sm backdrop-blur-sm"
+            style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-tertiary)' }}
             title="More actions"
           >
             <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -198,7 +235,15 @@ export default function DesignCard({
                 }}
               />
               {/* Dropdown menu */}
-              <div className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg dark:border-gray-600 dark:bg-gray-800">
+              <div
+                className="absolute right-0 top-full z-20 mt-1 w-36 overflow-hidden"
+                style={{
+                  borderRadius: '4px',
+                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: 'var(--bg-page)',
+                  boxShadow: 'rgba(15,15,15,0.1) 0 0 0 1px, rgba(15,15,15,0.1) 0 4px 8px',
+                }}
+              >
                 {onMove && (
                   <button
                     onClick={(e) => {
@@ -207,7 +252,8 @@ export default function DesignCard({
                       setMenuOpen(false);
                       onMove(design.id);
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover-warm"
+                    style={{ color: 'var(--text-secondary)' }}
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
@@ -216,12 +262,12 @@ export default function DesignCard({
                   </button>
                 )}
                 {onMove && onDelete && (
-                  <div className="border-t border-gray-100 dark:border-gray-700" />
+                  <div style={{ borderTop: '1px solid var(--border-subtle)' }} />
                 )}
                 {onDelete && (
                   <button
                     onClick={handleDelete}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -237,17 +283,14 @@ export default function DesignCard({
     </>
   );
 
-  const baseCardClasses = `group relative block overflow-hidden rounded-lg border bg-white dark:bg-gray-800 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`;
-
   if (selectionMode) {
     return (
       <div
         onClick={() => onToggleSelect?.(design.id)}
-        className={`${baseCardClasses} cursor-pointer ${
-          selected
-            ? "border-indigo-500 dark:border-indigo-400 ring-2 ring-indigo-500/30"
-            : "border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md"
-        }`}
+        className="group relative block overflow-hidden cursor-pointer focus:outline-none"
+        style={cardStyle}
+        onMouseOver={() => setHovered(true)}
+        onMouseOut={() => setHovered(false)}
       >
         {cardContent}
       </div>
@@ -257,7 +300,10 @@ export default function DesignCard({
   return (
     <Link
       href={href}
-      className={`${baseCardClasses} border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md`}
+      className="group relative block overflow-hidden focus:outline-none"
+      style={cardStyle}
+      onMouseOver={() => setHovered(true)}
+      onMouseOut={() => setHovered(false)}
     >
       {cardContent}
     </Link>

@@ -20,6 +20,7 @@ interface ProjectCardProps {
 export default function ProjectCard({ project, isAdmin, onDelete }: ProjectCardProps) {
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [hovered, setHovered] = useState(false);
 
   const createdDate = new Date(project.createdAt).toLocaleDateString("en-US", {
     month: "short",
@@ -55,10 +56,25 @@ export default function ProjectCard({ project, isAdmin, onDelete }: ProjectCardP
   return (
     <Link
       href={`/project/${project.id}`}
-      className="group relative block rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm transition-all hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+      className="group relative block focus:outline-none focus:ring-2 focus:ring-offset-2"
+      style={{
+        backgroundColor: 'var(--bg-page)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: '4px',
+        padding: '1.25rem',
+        transition: 'box-shadow 0.15s ease',
+        boxShadow: hovered ? 'rgba(15,15,15,0.1) 0 0 0 1px, rgba(15,15,15,0.1) 0 2px 4px' : 'none',
+        display: 'block',
+        textDecoration: 'none',
+      }}
+      onMouseOver={() => setHovered(true)}
+      onMouseOut={() => setHovered(false)}
     >
       <div className="flex items-start justify-between">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50">
+        <div
+          className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
+          style={{ backgroundColor: 'var(--bg-code)', color: 'var(--accent)' }}
+        >
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path
               strokeLinecap="round"
@@ -69,21 +85,26 @@ export default function ProjectCard({ project, isAdmin, onDelete }: ProjectCardP
         </div>
       </div>
 
-      <h3 className="mt-3 text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600">
+      <h3
+        className="mt-3 text-base"
+        style={{ color: 'var(--text-primary)', fontWeight: 600 }}
+      >
         {project.name}
       </h3>
 
       {project.description && (
-        <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">{project.description}</p>
+        <p className="mt-1 line-clamp-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          {project.description}
+        </p>
       )}
 
       {project.owner?.username && (
-        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+        <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Created by {project.owner.username}
         </p>
       )}
 
-      <div className="mt-4 flex items-center gap-4 text-xs text-gray-400">
+      <div className="mt-4 flex items-center gap-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
         <span className="flex items-center gap-1">
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path
@@ -119,7 +140,8 @@ export default function ProjectCard({ project, isAdmin, onDelete }: ProjectCardP
               </button>
               <button
                 onClick={cancelDelete}
-                className="rounded-md bg-white dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-600"
+                className="rounded-md px-2 py-1 text-xs font-medium shadow-sm"
+                style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-secondary)' }}
               >
                 Cancel
               </button>
@@ -127,7 +149,8 @@ export default function ProjectCard({ project, isAdmin, onDelete }: ProjectCardP
           ) : (
             <button
               onClick={handleDelete}
-              className="rounded-md bg-white/90 dark:bg-gray-800/90 p-1.5 text-gray-400 shadow-sm backdrop-blur-sm hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600"
+              className="rounded-md p-1.5 shadow-sm backdrop-blur-sm hover:bg-red-50 hover:text-red-600"
+              style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-tertiary)' }}
               title="Delete project"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
