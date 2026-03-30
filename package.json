@@ -1,6 +1,6 @@
 {
   "name": "designforge",
-  "version": "0.2.1",
+  "version": "2.0.1",
   "private": true,
   "bin": {
     "designforge": "./bin/cli.js"
