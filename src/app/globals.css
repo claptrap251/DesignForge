@@ -141,25 +141,52 @@ body {
   background-color: var(--bg-hover);
 }
 
-/* Prose typography — override Tailwind defaults with warm palette */
-.prose {
-  --tw-prose-body: var(--text-primary);
-  --tw-prose-headings: var(--text-primary);
-  --tw-prose-links: var(--accent);
-  --tw-prose-bold: var(--text-primary);
-  --tw-prose-quotes: var(--text-secondary);
-  --tw-prose-counters: var(--text-secondary);
-  --tw-prose-bullets: var(--text-tertiary);
-  --tw-prose-code: var(--text-primary);
-  --tw-prose-pre-bg: var(--bg-sidebar);
-  --tw-prose-pre-code: var(--text-primary);
-  --tw-prose-hr: var(--border-subtle);
-  --tw-prose-th-borders: var(--border-medium);
-  --tw-prose-td-borders: var(--border-subtle);
+/* Prose typography — override Tailwind defaults with warm palette.
+   Use high specificity to beat the typography plugin's built-in dark styles. */
+.prose,
+.dark .prose {
+  --tw-prose-body: var(--text-primary) !important;
+  --tw-prose-headings: var(--text-primary) !important;
+  --tw-prose-links: var(--accent) !important;
+  --tw-prose-bold: var(--text-primary) !important;
+  --tw-prose-quotes: var(--text-secondary) !important;
+  --tw-prose-quote-borders: var(--border-medium) !important;
+  --tw-prose-counters: var(--text-secondary) !important;
+  --tw-prose-bullets: var(--text-tertiary) !important;
+  --tw-prose-code: var(--text-primary) !important;
+  --tw-prose-pre-bg: var(--bg-sidebar) !important;
+  --tw-prose-pre-code: var(--text-primary) !important;
+  --tw-prose-hr: var(--border-subtle) !important;
+  --tw-prose-th-borders: var(--border-medium) !important;
+  --tw-prose-td-borders: var(--border-subtle) !important;
+  --tw-prose-captions: var(--text-tertiary) !important;
+  color: var(--text-primary);
 }
 
 .prose code:not(pre code) {
-  background-color: var(--bg-code);
+  background-color: var(--bg-code) !important;
+}
+
+.prose a {
+  color: var(--accent) !important;
+}
+
+.prose strong {
+  color: var(--text-primary) !important;
+}
+
+.prose h1, .prose h2, .prose h3, .prose h4 {
+  color: var(--text-primary) !important;
+}
+
+.prose blockquote {
+  color: var(--text-secondary) !important;
+  border-left-color: var(--border-medium) !important;
+}
+
+.prose pre {
+  background-color: var(--bg-sidebar) !important;
+  color: var(--text-primary) !important;
 }
 
 /* Code blocks: reset inline code styles inside pre */
