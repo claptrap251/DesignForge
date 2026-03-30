@@ -199,10 +199,10 @@ export default function ProjectPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
         <Header session={session} isAdmin={isAdminUser} />
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--accent)' }}></div>
         </div>
       </div>
     );
@@ -210,17 +210,17 @@ export default function ProjectPage() {
 
   if (!project) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
         <Header session={session} isAdmin={isAdminUser} />
         <div className="flex items-center justify-center h-96">
-          <p className="text-gray-500 dark:text-gray-400">Project not found</p>
+          <p style={{ color: 'var(--text-tertiary)' }}>Project not found</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
       <Header session={session} isAdmin={isAdminUser} />
 
       <div className="flex-1 flex">
@@ -246,7 +246,8 @@ export default function ProjectPage() {
               {/* Mobile sidebar toggle */}
               <button
                 onClick={() => setSidebarOpen(true)}
-                className="lg:hidden rounded-lg border border-gray-300 dark:border-gray-600 p-2 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="lg:hidden rounded p-2"
+                style={{ border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}
                 aria-label="Open folders"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -254,10 +255,10 @@ export default function ProjectPage() {
                 </svg>
               </button>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
+                <h2 className="text-lg sm:text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
                   {activeFolderData?.name || "Select a folder"}
                 </h2>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
                   {activeFolderData?.designs?.length || 0} designs
                 </p>
               </div>
@@ -266,11 +267,12 @@ export default function ProjectPage() {
               {!isReadOnly && activeFolder && activeFolderData?.designs?.length > 0 && (
                 <button
                   onClick={() => selectionMode ? cancelSelection() : setSelectionMode(true)}
-                  className={`px-3 py-2 text-sm border rounded-lg transition flex items-center gap-1 ${
+                  className="px-3 py-2 text-sm rounded transition flex items-center gap-1"
+                  style={
                     selectionMode
-                      ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
-                      : "border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
-                  }`}
+                      ? { border: '1px solid var(--accent)', backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }
+                      : { border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }
+                  }
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -280,7 +282,8 @@ export default function ProjectPage() {
               )}
               <button
                 onClick={() => setShowShare(true)}
-                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition flex items-center gap-1"
+                className="hover-warm px-3 py-2 text-sm rounded transition flex items-center gap-1"
+                style={{ border: '1px solid var(--border-medium)', color: 'var(--text-secondary)' }}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -290,7 +293,8 @@ export default function ProjectPage() {
               {!isReadOnly && activeFolder && !(activeFolderData?.ownerUsername && !activeFolderData?.parentId) && (
                 <button
                   onClick={() => setShowUpload(true)}
-                  className="bg-indigo-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition flex items-center gap-1"
+                  className="px-3 py-2 rounded text-sm font-medium transition flex items-center gap-1"
+                  style={{ backgroundColor: 'var(--accent)', color: 'white' }}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -306,7 +310,7 @@ export default function ProjectPage() {
             activeFolderData.ownerUsername && !activeFolderData.parentId ? (
               <div>
                 <div className="mb-4">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
                     {activeFolderData.children?.length || 0} capability folders
                   </p>
                 </div>
@@ -319,17 +323,29 @@ export default function ProjectPage() {
                         <button
                           key={child.id}
                           onClick={() => setActiveFolder(child.id)}
-                          className="group text-left block rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm transition-all hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-md"
+                          className="group text-left block p-5 transition-all"
+                          style={{ border: '1px solid var(--border-subtle)', borderRadius: '4px', backgroundColor: 'var(--bg-page)' }}
+                          onMouseOver={(e) => {
+                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)';
+                            (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.10)';
+                          }}
+                          onMouseOut={(e) => {
+                            (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)';
+                            (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+                          }}
                         >
-                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 transition-colors group-hover:bg-indigo-100 dark:group-hover:bg-indigo-900/50">
+                          <div
+                            className="flex h-10 w-10 items-center justify-center rounded transition-colors"
+                            style={{ backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}
+                          >
                             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                             </svg>
                           </div>
-                          <h3 className="mt-3 text-base font-semibold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600">
+                          <h3 className="mt-3 text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
                             {child.name}
                           </h3>
-                          <div className="mt-2 flex items-center gap-3 text-xs text-gray-400 dark:text-gray-500">
+                          <div className="mt-2 flex items-center gap-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                             <span className="flex items-center gap-1">
                               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
@@ -350,12 +366,15 @@ export default function ProjectPage() {
                     })}
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-16">
-                    <svg className="h-12 w-12 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <div
+                    className="flex flex-col items-center justify-center border-2 border-dashed py-16"
+                    style={{ borderColor: 'var(--border-medium)', borderRadius: '4px', backgroundColor: 'var(--bg-page)' }}
+                  >
+                    <svg className="h-12 w-12" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                     </svg>
-                    <p className="mt-3 text-sm font-medium text-gray-600 dark:text-gray-300">No capability folders yet</p>
-                    <p className="mt-1 text-sm text-gray-400 dark:text-gray-500">Create a sub-folder to start adding designs</p>
+                    <p className="mt-3 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>No capability folders yet</p>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--text-tertiary)' }}>Create a sub-folder to start adding designs</p>
                   </div>
                 )}
               </div>
@@ -366,9 +385,9 @@ export default function ProjectPage() {
                 ? allDesigns.filter((d: any) => (d.status || "DRAFT") === statusFilter)
                 : allDesigns;
               const sections = [
-                { key: "DRAFT", label: "Draft", color: "text-gray-500 dark:text-gray-400", dot: "bg-gray-400" },
-                { key: "IN_REVIEW", label: "In Review", color: "text-amber-600 dark:text-amber-400", dot: "bg-amber-500" },
-                { key: "APPROVED", label: "Approved", color: "text-green-600 dark:text-green-400", dot: "bg-green-500" },
+                { key: "DRAFT", label: "Draft", color: 'var(--text-tertiary)', dot: "bg-gray-400" },
+                { key: "IN_REVIEW", label: "In Review", color: 'var(--warning)', dot: "bg-amber-500" },
+                { key: "APPROVED", label: "Approved", color: 'var(--success)', dot: "bg-green-500" },
               ];
               const grouped = sections.map((s) => ({
                 ...s,
@@ -379,20 +398,25 @@ export default function ProjectPage() {
                 <div>
                   {/* Selection toolbar */}
                   {selectionMode && selectedDesigns.size > 0 && (
-                    <div className="mb-4 flex items-center gap-3 rounded-lg border border-indigo-300 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 px-4 py-2">
-                      <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
+                    <div
+                      className="mb-4 flex items-center gap-3 rounded px-4 py-2"
+                      style={{ border: '1px solid var(--accent)', backgroundColor: 'var(--accent-bg)' }}
+                    >
+                      <span className="text-sm font-medium" style={{ color: 'var(--accent)' }}>
                         {selectedDesigns.size} selected
                       </span>
                       <button
                         onClick={handleBulkMove}
-                        className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white hover:bg-indigo-700"
+                        className="rounded px-3 py-1 text-sm font-medium text-white"
+                        style={{ backgroundColor: 'var(--accent)' }}
                       >
                         Move selected
                       </button>
                       <div className="flex-1" />
                       <button
                         onClick={cancelSelection}
-                        className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                        className="text-sm"
+                        style={{ color: 'var(--text-tertiary)' }}
                       >
                         Cancel
                       </button>
@@ -401,14 +425,15 @@ export default function ProjectPage() {
 
                   {/* Status filter */}
                   <div className="mb-4 flex items-center gap-2">
-                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Filter:</span>
+                    <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-tertiary)' }}>Filter:</span>
                     <button
                       onClick={() => setStatusFilter(null)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                      className="rounded-full px-2.5 py-1 text-xs font-medium transition-colors"
+                      style={
                         statusFilter === null
-                          ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
-                          : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                      }`}
+                          ? { backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }
+                          : { backgroundColor: 'var(--bg-code)', color: 'var(--text-secondary)' }
+                      }
                     >
                       All ({allDesigns.length})
                     </button>
@@ -418,11 +443,12 @@ export default function ProjectPage() {
                         <button
                           key={s.key}
                           onClick={() => setStatusFilter(statusFilter === s.key ? null : s.key)}
-                          className={`rounded-full px-2.5 py-1 text-xs font-medium transition-colors ${
+                          className="rounded-full px-2.5 py-1 text-xs font-medium transition-colors"
+                          style={
                             statusFilter === s.key
-                              ? "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300"
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                          }`}
+                              ? { backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }
+                              : { backgroundColor: 'var(--bg-code)', color: 'var(--text-secondary)' }
+                          }
                         >
                           {s.label} ({count})
                         </button>
@@ -436,10 +462,10 @@ export default function ProjectPage() {
                       <div key={section.key} className="mb-8">
                         <div className="mb-3 flex items-center gap-2">
                           <span className={`h-2.5 w-2.5 rounded-full ${section.dot}`} />
-                          <h3 className={`text-sm font-semibold uppercase tracking-wider ${section.color}`}>
+                          <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: section.color }}>
                             {section.label}
                           </h3>
-                          <span className="text-xs text-gray-400">({section.designs.length})</span>
+                          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>({section.designs.length})</span>
                         </div>
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                           {section.designs.map((design: any) => (
@@ -460,13 +486,17 @@ export default function ProjectPage() {
                   )}
 
                   {filtered.length === 0 && (
-                    <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 py-16">
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <div
+                      className="flex flex-col items-center justify-center border-2 border-dashed py-16"
+                      style={{ borderColor: 'var(--border-medium)', borderRadius: '4px', backgroundColor: 'var(--bg-page)' }}
+                    >
+                      <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
                         {statusFilter ? `No ${sections.find((s) => s.key === statusFilter)?.label.toLowerCase()} designs` : "No designs yet"}
                       </p>
                       <button
                         onClick={() => setShowUpload(true)}
-                        className="mt-4 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                        className="mt-4 rounded px-4 py-2 text-sm font-medium text-white"
+                        style={{ backgroundColor: 'var(--accent)' }}
                       >
                         Upload Design
                       </button>
@@ -477,7 +507,7 @@ export default function ProjectPage() {
             })()
             )
           ) : (
-            <div className="text-center py-20 text-gray-500 dark:text-gray-400">
+            <div className="text-center py-20" style={{ color: 'var(--text-tertiary)' }}>
               Select a folder or create one to get started
             </div>
           )}

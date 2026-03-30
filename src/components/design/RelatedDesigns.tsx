@@ -60,7 +60,7 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: 'var(--accent)' }}></div>
       </div>
     );
   }
@@ -69,7 +69,8 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
     return (
       <div className="py-8 text-center">
         <svg
-          className="mx-auto h-8 w-8 text-gray-300"
+          className="mx-auto h-8 w-8"
+          style={{ color: 'var(--text-tertiary)' }}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -81,8 +82,8 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
             d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.07-9.07a4.5 4.5 0 016.364 6.364l-4.5 4.5a4.5 4.5 0 01-7.244-1.242"
           />
         </svg>
-        <p className="mt-2 text-sm text-gray-400">No related designs found</p>
-        <p className="mt-1 text-xs text-gray-400">
+        <p className="mt-2 text-sm" style={{ color: 'var(--text-tertiary)' }}>No related designs found</p>
+        <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
           Similarity is computed from shared terminology across markdown designs in this project.
         </p>
       </div>
@@ -95,7 +96,6 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
         const isA = rel.docAId === designId;
         const relatedId = isA ? rel.docBId : rel.docAId;
         const relatedName = isA ? rel.docBName : rel.docAName;
-        const relatedOwner = isA ? rel.docBOwner : rel.docAOwner;
         const relatedFolderPath = isA ? rel.docBFolderPath : rel.docAFolderPath;
         const bestChunk = isA ? rel.bestChunkB : rel.bestChunkA;
         const myChunk = isA ? rel.bestChunkA : rel.bestChunkB;
@@ -103,28 +103,44 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
 
         const barColor =
           percent >= 70
-            ? "bg-amber-500"
+            ? 'var(--warning)'
             : percent >= 30
-            ? "bg-blue-500"
-            : "bg-gray-400";
+            ? 'var(--accent)'
+            : 'var(--text-tertiary)';
+
+        const badgeBg =
+          percent >= 70
+            ? 'var(--warning-bg)'
+            : percent >= 30
+            ? 'var(--accent-bg)'
+            : 'var(--bg-code)';
 
         const badgeColor =
           percent >= 70
-            ? "text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/50"
+            ? 'var(--warning)'
             : percent >= 30
-            ? "text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/50"
-            : "text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700";
+            ? 'var(--accent)'
+            : 'var(--text-tertiary)';
 
         return (
           <a
             key={relatedId}
             href={navUrl(`/project/${projectId}/design/${relatedId}`)}
-            className="block rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-3 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-sm transition-all"
+            className="block p-3 transition-all"
+            style={{ border: '1px solid var(--border-subtle)', borderRadius: '4px', backgroundColor: 'var(--bg-page)' }}
+            onMouseOver={(e) => {
+              (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.12)';
+              (e.currentTarget as HTMLElement).style.borderColor = 'var(--accent)';
+            }}
+            onMouseOut={(e) => {
+              (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+              (e.currentTarget as HTMLElement).style.borderColor = 'var(--border-subtle)';
+            }}
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
                 {relatedFolderPath && relatedFolderPath.length > 0 && (
-                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate mb-0.5">
+                  <p className="text-xs truncate mb-0.5" style={{ color: 'var(--text-tertiary)' }}>
                     {relatedFolderPath.map((f, i) => (
                       <span key={f.id}>
                         {i > 0 && <span className="mx-0.5">/</span>}
@@ -134,7 +150,10 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
                             e.stopPropagation();
                             window.location.href = navUrl(`/project/${projectId}?folder=${f.id}`);
                           }}
-                          className="hover:text-indigo-500 dark:hover:text-indigo-400 hover:underline"
+                          className="hover:underline"
+                          style={{ color: 'var(--text-tertiary)' }}
+                          onMouseOver={(e) => (e.currentTarget.style.color = 'var(--accent)')}
+                          onMouseOut={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
                         >
                           {f.name}
                         </button>
@@ -142,26 +161,29 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
                     ))}
                   </p>
                 )}
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                   {relatedName}
                 </p>
               </div>
-              <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badgeColor}`}>
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
+                style={{ backgroundColor: badgeBg, color: badgeColor }}
+              >
                 {percent}%
               </span>
             </div>
 
             {/* Similarity bar */}
-            <div className="mt-2 h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700">
+            <div className="mt-2 h-1.5 w-full rounded-full" style={{ backgroundColor: 'var(--bg-code)' }}>
               <div
-                className={`h-1.5 rounded-full ${barColor} transition-all`}
-                style={{ width: `${percent}%` }}
+                className="h-1.5 rounded-full transition-all"
+                style={{ width: `${percent}%`, backgroundColor: barColor }}
               />
             </div>
 
             {/* Best matching sections */}
             {myChunk && bestChunk && rel.chunkScore > 0 && (
-              <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <div className="mt-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                 <span className="font-medium">{myChunk}</span>
                 {" "}matches{" "}
                 <span className="font-medium">{bestChunk}</span>
@@ -174,7 +196,8 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
                 {rel.sharedTerms.map((term) => (
                   <span
                     key={term}
-                    className="inline-block rounded bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 text-[10px] text-gray-500 dark:text-gray-400"
+                    className="inline-block rounded px-1.5 py-0.5 text-[10px]"
+                    style={{ backgroundColor: 'var(--bg-code)', color: 'var(--text-secondary)' }}
                   >
                     {term}
                   </span>
