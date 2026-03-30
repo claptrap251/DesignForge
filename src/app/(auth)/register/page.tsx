@@ -6,6 +6,13 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { apiUrl } from "@/lib/basePath";
 
+const baseInputStyle = {
+  backgroundColor: "var(--bg-page)",
+  border: "1px solid var(--border-medium)",
+  color: "var(--text-primary)",
+  borderRadius: "4px",
+};
+
 export default function RegisterPage() {
   const router = useRouter();
   const [username, setUsername] = useState("");
@@ -14,6 +21,14 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [buttonHovered, setButtonHovered] = useState(false);
+
+  const inputStyle = (field: string) => ({
+    ...baseInputStyle,
+    borderColor:
+      focusedField === field ? "var(--accent)" : "var(--border-medium)",
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,30 +69,56 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div
+      className="min-h-screen flex items-center justify-center"
+      style={{ backgroundColor: "var(--bg-sidebar)" }}
+    >
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-bold text-indigo-600">
+          <Link
+            href="/"
+            className="text-2xl font-bold"
+            style={{ color: "var(--accent)" }}
+          >
             DesignForge
           </Link>
-          <h2 className="mt-4 text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <h2
+            className="mt-4 text-xl font-semibold"
+            style={{ color: "var(--text-primary)" }}
+          >
             Create your account
           </h2>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white dark:bg-gray-800 shadow-sm rounded-xl p-8 border border-gray-200 dark:border-gray-700"
+          className="p-8"
+          style={{
+            backgroundColor: "var(--bg-page)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "4px",
+            boxShadow: "0 1px 3px rgba(15,15,15,0.04)",
+          }}
         >
           {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 rounded-lg text-sm">
+            <div
+              className="mb-4 p-3 rounded text-sm"
+              style={{
+                backgroundColor: "var(--danger-bg)",
+                color: "var(--danger)",
+              }}
+            >
               {error}
             </div>
           )}
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Username <span className="text-red-500">*</span>
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Username{" "}
+              <span style={{ color: "var(--danger)" }}>*</span>
             </label>
             <input
               type="text"
@@ -87,43 +128,66 @@ export default function RegisterPage() {
               minLength={3}
               maxLength={39}
               pattern="[a-zA-Z0-9_-]+"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 focus:outline-none"
+              style={inputStyle("username")}
+              onFocus={() => setFocusedField("username")}
+              onBlur={() => setFocusedField(null)}
               placeholder="your-username"
             />
-            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <p
+              className="mt-1 text-xs"
+              style={{ color: "var(--text-secondary)" }}
+            >
               3-39 characters. Letters, numbers, hyphens, underscores only.
             </p>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: "var(--text-secondary)" }}
+            >
               Display Name
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 focus:outline-none"
+              style={inputStyle("name")}
+              onFocus={() => setFocusedField("name")}
+              onBlur={() => setFocusedField(null)}
               placeholder="Your name"
             />
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Email <span className="text-gray-400">(optional)</span>
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Email{" "}
+              <span style={{ color: "var(--text-secondary)" }}>(optional)</span>
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 focus:outline-none"
+              style={inputStyle("email")}
+              onFocus={() => setFocusedField("email")}
+              onBlur={() => setFocusedField(null)}
               placeholder="you@example.com"
             />
           </div>
 
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Password <span className="text-red-500">*</span>
+            <label
+              className="block text-sm font-medium mb-1"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Password{" "}
+              <span style={{ color: "var(--danger)" }}>*</span>
             </label>
             <input
               type="password"
@@ -131,7 +195,10 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 focus:outline-none"
+              style={inputStyle("password")}
+              onFocus={() => setFocusedField("password")}
+              onBlur={() => setFocusedField(null)}
               placeholder="••••••••"
             />
           </div>
@@ -139,14 +206,29 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white py-2 rounded-lg font-medium hover:bg-indigo-700 transition disabled:opacity-50"
+            className="w-full text-white py-2 font-medium transition disabled:opacity-50"
+            style={{
+              backgroundColor: buttonHovered
+                ? "var(--accent-hover)"
+                : "var(--accent)",
+              borderRadius: "4px",
+            }}
+            onMouseEnter={() => setButtonHovered(true)}
+            onMouseLeave={() => setButtonHovered(false)}
           >
             {loading ? "Creating account..." : "Create Account"}
           </button>
 
-          <p className="mt-4 text-center text-sm text-gray-600 dark:text-gray-400">
+          <p
+            className="mt-4 text-center text-sm"
+            style={{ color: "var(--text-secondary)" }}
+          >
             Already have an account?{" "}
-            <Link href="/login" className="text-indigo-600 hover:underline">
+            <Link
+              href="/login"
+              className="hover:underline"
+              style={{ color: "var(--accent)" }}
+            >
               Sign in
             </Link>
           </p>
