@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
 import { useTheme } from "@/components/ThemeProvider";
+import { navUrl } from "@/lib/basePath";
 
 interface HeaderProps {
   session: any;
@@ -85,6 +86,12 @@ export default function Header({ session, isAdmin: admin }: HeaderProps) {
                   Admin
                 </Link>
               )}
+              <a
+                href={navUrl("/settings/tokens")}
+                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                API Tokens
+              </a>
               <span className="text-sm text-gray-700 dark:text-gray-300">
                 {session.user?.name || session.user?.username}
               </span>
@@ -149,6 +156,13 @@ export default function Header({ session, isAdmin: admin }: HeaderProps) {
                   Admin
                 </Link>
               )}
+              <a
+                href={navUrl("/settings/tokens")}
+                className="block rounded-md px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={() => setMenuOpen(false)}
+              >
+                API Tokens
+              </a>
               <button
                 onClick={() => signOut()}
                 className="w-full rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
