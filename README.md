@@ -54,6 +54,14 @@
 - **Selective restore** — Full restore (wipe and rebuild) or selective (pick specific projects to import)
 - **Admin page** — Dedicated `/admin` page with backup history, manual trigger, restore controls, and configuration display
 
+### AI Agent Integration (v2)
+- **GitHub Markdown Scraper** — Scrape all `.md` files from GitHub orgs/users into DesignForge. Multi-target support, per-repo branch selection, configurable cron schedule (default: every 12 hours), auto-generated index for fast lookups. Supports GitHub Enterprise
+- **dfcli — CLI for AI Agents** — Standalone CLI tool (`dfcli pull`, `dfcli upload`, `dfcli related`) that AI coding agents use to load context from DesignForge. Finds semantically related docs via TF-IDF similarity, including scraped GitHub content
+- **Document Similarity Engine** — Hybrid TF-IDF engine computes relationships between all markdown designs in a project. Document-level + chunk-level (by heading) scoring with optional local embeddings via all-MiniLM-L6-v2
+- **API Token Auth** — Generate Bearer tokens at `/settings/tokens` for machine access. Multiple tokens per user, SHA-256 hashed at rest
+- **Claude Code Skill** — Built-in skill (`.claude/skills/designforge.md`) that agents invoke to auto-fetch related design docs and scraped GitHub documentation into their context window
+- **Folder Breadcrumbs** — Design viewer and related designs show clickable folder paths for origin tracking
+
 ### Collaboration
 - **Shareable links** — Generate share links with optional password protection and expiry dates
 - **Export** — Export designs as Markdown, HTML, Word, or Confluence markup with rich comment context
@@ -152,11 +160,8 @@ Open [http://localhost:3000](http://localhost:3000) and register your first acco
 | `NEXT_TELEMETRY_DISABLED` | Disable Next.js telemetry | `1` |
 | `ALLOWED_DEV_ORIGINS` | Comma-separated dev origins for remote access | — |
 | `ADMIN_USERNAME` | Username with admin privileges | — |
-| `GITHUB_BACKUP_URL` | GitHub API base URL (enterprise: `https://gh.company.com/api/v3`) | `https://api.github.com` |
-| `GITHUB_BACKUP_REPO` | Backup repository in `owner/repo` format | — |
-| `GITHUB_BACKUP_TOKEN` | GitHub personal access token with repo access | — |
-| `GITHUB_BACKUP_BRANCH` | Target branch for backups | `main` |
-| `BACKUP_SCHEDULE_CRON` | Cron expression for automatic backups | `0 2 * * *` |
+| `ENCRYPTION_KEY` | Encryption key for tokens stored in DB (falls back to `NEXTAUTH_SECRET`) | — |
+| `GITHUB_BACKUP_*` | Legacy backup env vars — auto-migrated to DB on first startup | — |
 
 ## Deployment
 
@@ -193,6 +198,9 @@ src/
 │   ├── admin/               # Admin backup/restore page
 │   ├── api/
 │   │   ├── admin/           # Backup, restore, config, admin check
+│   │   │   └── scraper/     # GitHub scraper config, repos, branches, run, history
+│   │   ├── cli/             # CLI endpoints: files, projects, related search
+│   │   ├── tokens/          # API token management (generate, list, revoke)
 │   │   ├── designs/         # Design CRUD + versioning + export + move
 │   │   ├── comments/        # Comment CRUD + replies
 │   │   ├── projects/        # Project CRUD (admin-only create/delete)
@@ -222,13 +230,21 @@ src/
 │   ├── basePath.ts          # Base path helper for API/navigation URLs
 │   ├── clipboard.ts         # Clipboard with fallback for non-HTTPS
 │   ├── anchor.ts            # Comment anchor computation
+│   ├── crypto.ts            # AES-256-GCM encrypt/decrypt for stored tokens
+│   ├── similarity.ts        # TF-IDF similarity engine for document relationships
 │   ├── backup/
 │   │   ├── github.ts        # GitHub API client (supports enterprise)
 │   │   ├── serialize.ts     # DB to file tree serialization
 │   │   ├── deserialize.ts   # File tree to DB restore
 │   │   └── scheduler.ts     # Cron-based backup scheduling
+│   ├── scraper/
+│   │   ├── github.ts        # GitHubScraper client (multi-repo, read-only)
+│   │   ├── engine.ts        # Scrape orchestrator (folder creation, design upsert)
+│   │   └── scheduler.ts     # Per-target cron registration
 │   └── export/              # Confluence, HTML, Markdown, Word exporters
-├── instrumentation.ts       # Startup: cron scheduler + data migration
+├── instrumentation.ts       # Startup: cron scheduler + migrations
+├── .claude/skills/          # Claude Code skill for AI agent context loading
+├── cli/                     # dfcli — standalone CLI for AI agents
 └── prisma/
     └── schema.prisma        # Database schema
 ```
