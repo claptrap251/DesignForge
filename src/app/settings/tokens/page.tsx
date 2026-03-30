@@ -40,10 +40,19 @@ export default function TokensPage() {
   /* Delete confirmation */
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  /* Admin check for Header */
+  const [isAdminUser, setIsAdminUser] = useState(false);
+
   /* ---- Auth guard ---- */
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/login");
+    }
+    if (status === "authenticated") {
+      fetch(apiUrl("/api/admin/check"))
+        .then((r) => r.json())
+        .then((d) => setIsAdminUser(d.isAdmin === true))
+        .catch(() => {});
     }
   }, [status, router]);
 
@@ -124,7 +133,7 @@ export default function TokensPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header session={session} />
+      <Header session={session} isAdmin={isAdminUser} />
 
       <main className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-6 flex items-center justify-between">
