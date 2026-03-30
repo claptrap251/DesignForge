@@ -15,8 +15,9 @@ export async function resolveDesignByPath(projectId: string, filePath: string) {
   // Walk the folder tree
   let currentParentId: string | null = null;
   for (const folderName of parts) {
-    const folder = await prisma.folder.findFirst({
+    const folder: { id: string } | null = await prisma.folder.findFirst({
       where: { projectId, parentId: currentParentId, name: folderName },
+      select: { id: true },
     });
     if (!folder) return null;
     currentParentId = folder.id;
@@ -40,7 +41,7 @@ async function buildDesignPath(design: { folderId: string; name: string }): Prom
   const parts: string[] = [];
   let currentId: string | null = design.folderId;
   while (currentId) {
-    const folder = await prisma.folder.findUnique({
+    const folder: { name: string; parentId: string | null } | null = await prisma.folder.findUnique({
       where: { id: currentId },
       select: { name: true, parentId: true },
     });

@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
   const existing = await prisma.backupConfig.findFirst();
 
-  const data: Record<string, string | boolean> = {
+  const base = {
     apiUrl: (apiUrl || "https://api.github.com").replace(/\/+$/, ""),
     repo,
     branch: branch || "main",
@@ -50,18 +50,18 @@ export async function POST(request: NextRequest) {
     enabled: enabled !== false,
   };
 
-  if (token) {
-    data.encryptedToken = encrypt(token);
-  }
-
   if (existing) {
-    await prisma.backupConfig.update({ where: { id: existing.id }, data });
+    await prisma.backupConfig.update({
+      where: { id: existing.id },
+      data: token ? { ...base, encryptedToken: encrypt(token) } : base,
+    });
   } else {
     if (!token) {
       return NextResponse.json({ error: "Token is required for initial setup" }, { status: 400 });
     }
-    data.encryptedToken = encrypt(token);
-    await prisma.backupConfig.create({ data });
+    await prisma.backupConfig.create({
+      data: { ...base, encryptedToken: encrypt(token) },
+    });
   }
 
   const { startScheduler } = await import("@/lib/backup/scheduler");

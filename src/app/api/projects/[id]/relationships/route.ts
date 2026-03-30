@@ -71,7 +71,7 @@ export async function GET(
     const path: { id: string; name: string }[] = [];
     let currentId: string | null = folderId;
     while (currentId) {
-      const folder = await prisma.folder.findUnique({
+      const folder: { id: string; name: string; parentId: string | null } | null = await prisma.folder.findUnique({
         where: { id: currentId },
         select: { id: true, name: true, parentId: true },
       });
