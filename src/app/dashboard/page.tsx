@@ -60,14 +60,14 @@ export default function DashboardPage() {
 
   if (status === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
         <Header session={session} isAdmin={isAdminUser} />
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48"></div>
+            <div className="h-8 rounded w-48" style={{ backgroundColor: 'var(--border-subtle)' }}></div>
             <div className="grid md:grid-cols-3 gap-6">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="h-40 bg-gray-200 dark:bg-gray-700 rounded-xl"></div>
+                <div key={i} className="h-40 rounded" style={{ backgroundColor: 'var(--border-subtle)' }}></div>
               ))}
             </div>
           </div>
@@ -77,16 +77,17 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
       <Header session={session} isAdmin={isAdminUser} />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Projects</h2>
+          <h2 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>Projects</h2>
           {isAdminUser && (
             <button
               onClick={() => setShowCreate(true)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition flex items-center gap-2"
+              className="px-4 py-2 rounded text-sm font-medium transition flex items-center gap-2 text-white"
+              style={{ backgroundColor: 'var(--accent)', borderRadius: '4px' }}
             >
               <svg
                 className="w-4 h-4"
@@ -108,9 +109,13 @@ export default function DashboardPage() {
 
         {projects.length === 0 ? (
           <div className="text-center py-20">
-            <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div
+              className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
+              style={{ backgroundColor: 'var(--bg-code)' }}
+            >
               <svg
-                className="w-8 h-8 text-gray-400"
+                className="w-8 h-8"
+                style={{ color: 'var(--text-tertiary)' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -123,10 +128,10 @@ export default function DashboardPage() {
                 />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+            <h3 className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
               No projects yet
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
+            <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>
               {isAdminUser
                 ? "Create your first project to start collecting design feedback."
                 : "No projects available. Ask your admin to create one."}
@@ -134,7 +139,8 @@ export default function DashboardPage() {
             {isAdminUser && (
               <button
                 onClick={() => setShowCreate(true)}
-                className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 transition"
+                className="px-4 py-2 text-sm font-medium transition text-white"
+                style={{ backgroundColor: 'var(--accent)', borderRadius: '4px' }}
               >
                 Create Project
               </button>

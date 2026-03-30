@@ -129,7 +129,9 @@ describe("scrape engine", () => {
       where: { folderId: scrapedata!.id, name: "Index" },
     });
     expect(index).not.toBeNull();
-    expect(index!.content).toContain("my-repo: README.md, docs/guide.md");
+    expect(index!.content).toContain("## my-repo");
+    expect(index!.content).toContain("- README.md");
+    expect(index!.content).toContain("- docs/guide.md");
     expect(index!.content).toContain("test-org");
   });
 

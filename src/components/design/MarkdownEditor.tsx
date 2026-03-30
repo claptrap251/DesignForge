@@ -95,6 +95,8 @@ export default function MarkdownEditor({ content, onSave, onCancel }: MarkdownEd
   const [editContent, setEditContent] = useState(content);
   const [changeNote, setChangeNote] = useState("");
   const [saving, setSaving] = useState(false);
+  const [changeNoteFocused, setChangeNoteFocused] = useState(false);
+  const [saveHovered, setSaveHovered] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hasChanges = editContent !== content;
 
@@ -178,16 +180,20 @@ export default function MarkdownEditor({ content, onSave, onCancel }: MarkdownEd
   };
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-gray-900">
+    <div className="flex flex-col h-full" style={{ backgroundColor: 'var(--bg-page)' }}>
       {/* Toolbar */}
-      <div className="shrink-0 flex items-center gap-1 px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+      <div
+        className="shrink-0 flex items-center gap-1 px-3 py-2 border-b"
+        style={{ backgroundColor: 'var(--bg-sidebar)', borderColor: 'var(--border-subtle)' }}
+      >
         <div className="flex items-center gap-0.5 mr-3">
           {formatActions.map((action) => (
             <button
               key={action.label}
               onClick={() => insertFormat(action)}
               title={action.label}
-              className="flex items-center justify-center w-7 h-7 rounded text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              className="flex items-center justify-center w-7 h-7 rounded hover-warm transition-colors"
+              style={{ color: 'var(--text-secondary)' }}
             >
               {action.icon}
             </button>
@@ -199,19 +205,30 @@ export default function MarkdownEditor({ content, onSave, onCancel }: MarkdownEd
             type="text"
             value={changeNote}
             onChange={(e) => setChangeNote(e.target.value)}
+            onFocus={() => setChangeNoteFocused(true)}
+            onBlur={() => setChangeNoteFocused(false)}
             placeholder="Change note (optional)"
-            className="w-48 lg:w-64 rounded border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-2 py-1 text-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-48 lg:w-64 rounded border px-2 py-1 text-sm focus:outline-none"
+            style={{
+              backgroundColor: 'var(--bg-page)',
+              color: 'var(--text-primary)',
+              borderColor: changeNoteFocused ? 'var(--accent)' : 'var(--border-medium)',
+            }}
           />
           <button
             onClick={handleCancel}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="rounded-lg border px-3 py-1.5 text-sm font-medium hover-warm"
+            style={{ borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' }}
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || !hasChanges}
-            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            onMouseEnter={() => setSaveHovered(true)}
+            onMouseLeave={() => setSaveHovered(false)}
+            className="rounded-lg px-3 py-1.5 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ backgroundColor: saveHovered ? 'var(--accent-hover)' : 'var(--accent)' }}
           >
             {saving ? "Saving..." : "Save as New Version"}
           </button>
@@ -221,30 +238,61 @@ export default function MarkdownEditor({ content, onSave, onCancel }: MarkdownEd
       {/* Split view: editor + preview */}
       <div className="flex-1 flex overflow-hidden">
         {/* Editor pane */}
-        <div className="w-1/2 flex flex-col border-r border-gray-200 dark:border-gray-700">
-          <div className="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="w-1/2 flex flex-col border-r" style={{ borderColor: 'var(--border-subtle)' }}>
+          <div
+            className="px-3 py-1.5 text-xs font-medium border-b"
+            style={{ color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-sidebar)', borderColor: 'var(--border-subtle)' }}
+          >
             Markdown
           </div>
           <textarea
             ref={textareaRef}
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            className="flex-1 w-full resize-none border-0 bg-white dark:bg-gray-900 dark:text-gray-100 px-4 py-3 font-mono text-sm leading-relaxed focus:outline-none"
+            className="flex-1 w-full resize-none border-0 px-4 py-3 font-mono text-sm leading-relaxed focus:outline-none"
+            style={{ backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
             spellCheck={false}
           />
         </div>
 
         {/* Preview pane */}
         <div className="w-1/2 flex flex-col">
-          <div className="px-3 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div
+            className="px-3 py-1.5 text-xs font-medium border-b"
+            style={{ color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-sidebar)', borderColor: 'var(--border-subtle)' }}
+          >
             Preview
           </div>
           <div className="flex-1 overflow-auto px-8 py-6">
-            <article className="prose prose-lg prose-gray dark:prose-invert max-w-none leading-relaxed prose-headings:text-gray-900 dark:prose-headings:text-gray-100 prose-h1:text-3xl prose-h1:mt-10 prose-h1:mb-6 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-5 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-p:my-5 prose-p:leading-8 prose-li:my-2 prose-li:leading-7 prose-ul:my-5 prose-ol:my-5 prose-blockquote:my-6 prose-blockquote:pl-5 prose-hr:my-10 prose-a:text-indigo-600 dark:prose-a:text-indigo-400 prose-code:rounded prose-code:bg-gray-100 dark:prose-code:bg-gray-800 prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-pre:bg-gray-900 dark:prose-pre:bg-gray-950 prose-pre:text-gray-100 prose-pre:my-8 prose-pre:p-5 prose-table:my-8 prose-img:my-8 prose-figure:my-8 prose-strong:text-gray-900 dark:prose-strong:text-gray-100">
+            <article className="prose prose-lg max-w-none leading-relaxed prose-h1:text-3xl prose-h1:mt-10 prose-h1:mb-6 prose-h2:text-2xl prose-h2:mt-10 prose-h2:mb-5 prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-4 prose-p:my-5 prose-p:leading-8 prose-li:my-2 prose-li:leading-7 prose-ul:my-5 prose-ol:my-5 prose-blockquote:my-6 prose-blockquote:pl-5 prose-hr:my-10 prose-code:rounded prose-code:px-1.5 prose-code:py-0.5 prose-code:text-sm prose-pre:my-8 prose-pre:p-5 prose-table:my-8 prose-img:my-8 prose-figure:my-8">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm, remarkSourceLines]}
                 rehypePlugins={[rehypeSlug]}
                 components={{
+                  h1: ({ children, ...props }) => (
+                    <h1 style={{ color: 'var(--text-primary)' }} {...props}>{children}</h1>
+                  ),
+                  h2: ({ children, ...props }) => (
+                    <h2 style={{ color: 'var(--text-primary)' }} {...props}>{children}</h2>
+                  ),
+                  h3: ({ children, ...props }) => (
+                    <h3 style={{ color: 'var(--text-primary)' }} {...props}>{children}</h3>
+                  ),
+                  p: ({ children, ...props }) => (
+                    <p style={{ color: 'var(--text-primary)' }} {...props}>{children}</p>
+                  ),
+                  strong: ({ children, ...props }) => (
+                    <strong style={{ color: 'var(--text-primary)' }} {...props}>{children}</strong>
+                  ),
+                  a: ({ children, ...props }) => (
+                    <a style={{ color: 'var(--accent)' }} {...props}>{children}</a>
+                  ),
+                  li: ({ children, ...props }) => (
+                    <li style={{ color: 'var(--text-primary)' }} {...props}>{children}</li>
+                  ),
+                  blockquote: ({ children, ...props }) => (
+                    <blockquote style={{ color: 'var(--text-secondary)', borderColor: 'var(--border-medium)' }} {...props}>{children}</blockquote>
+                  ),
                   code({ className, children: codeChildren, ...props }) {
                     const match = /language-(\w+)/.exec(className || "");
                     const lang = match ? match[1] : "";
@@ -256,7 +304,10 @@ export default function MarkdownEditor({ content, onSave, onCancel }: MarkdownEd
 
                     if (lang) {
                       return (
-                        <pre className="overflow-x-auto rounded-lg bg-gray-900 p-4 text-sm text-gray-100">
+                        <pre
+                          className="overflow-x-auto rounded-lg p-4 text-sm"
+                          style={{ backgroundColor: 'var(--bg-sidebar)', color: 'var(--text-primary)' }}
+                        >
                           <code className={className} {...props}>
                             {codeChildren}
                           </code>
@@ -265,7 +316,11 @@ export default function MarkdownEditor({ content, onSave, onCancel }: MarkdownEd
                     }
 
                     return (
-                      <code className={className} {...props}>
+                      <code
+                        className={className}
+                        style={{ backgroundColor: 'var(--bg-sidebar)', color: 'var(--text-primary)' }}
+                        {...props}
+                      >
                         {codeChildren}
                       </code>
                     );

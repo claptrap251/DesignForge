@@ -89,12 +89,13 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-[calc(100%-2rem)] sm:max-w-md rounded-xl bg-white dark:bg-gray-800 dark:border-gray-700 p-4 sm:p-6 shadow-xl">
+      <div className="relative z-10 w-full max-w-[calc(100%-2rem)] sm:max-w-md rounded-xl p-4 sm:p-6 shadow-xl" style={{ backgroundColor: 'var(--bg-page)' }}>
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Export Project</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>Export Project</h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+            className="rounded-lg p-1"
+            style={{ color: 'var(--text-tertiary)' }}
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -103,18 +104,19 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
         </div>
 
         {error && (
-          <div className="mt-3 rounded-lg bg-red-50 dark:bg-red-900/30 px-4 py-2 text-sm text-red-700 dark:text-red-400">{error}</div>
+          <div className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</div>
         )}
 
         <div className="mt-4 space-y-2">
           {FORMAT_OPTIONS.map((opt) => (
             <label
               key={opt.value}
-              className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+              className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors"
+              style={
                 format === opt.value
-                  ? "border-indigo-300 bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-900/30"
-                  : "border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600"
-              }`}
+                  ? { borderColor: 'var(--accent)', backgroundColor: 'var(--accent-bg)' }
+                  : { borderColor: 'var(--border-subtle)' }
+              }
             >
               <input
                 type="radio"
@@ -122,11 +124,12 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
                 value={opt.value}
                 checked={format === opt.value}
                 onChange={() => setFormat(opt.value)}
-                className="mt-0.5 h-4 w-4 border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="mt-0.5 h-4 w-4"
+                style={{ accentColor: 'var(--accent)' }}
               />
               <div>
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{opt.label}</span>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{opt.description}</p>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{opt.label}</span>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{opt.description}</p>
               </div>
             </label>
           ))}
@@ -135,7 +138,8 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
         <div className="mt-6 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
+            style={{ borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' }}
           >
             Cancel
           </button>
@@ -143,7 +147,8 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
             <button
               onClick={handleCopyConfluence}
               disabled={copyStatus === "copying"}
-              className="flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition-colors hover:bg-indigo-100 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50"
+              style={{ borderColor: 'var(--accent)', backgroundColor: 'var(--accent-bg)', color: 'var(--accent)' }}
             >
               {copyStatus === "copied" ? (
                 "Copied!"
@@ -164,7 +169,8 @@ export default function ExportDialog({ projectId, open, onClose }: ExportDialogP
           <button
             onClick={handleExport}
             disabled={exporting}
-            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus:outline-none disabled:opacity-50"
+            style={{ backgroundColor: 'var(--accent)' }}
           >
             {exporting ? (
               <>

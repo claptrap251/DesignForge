@@ -82,14 +82,14 @@ export default function UploadNewVersion({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-lg rounded-lg bg-white dark:bg-gray-800 p-6 shadow-xl">
+      <div className="w-full max-w-lg rounded-lg p-6 shadow-xl" style={{ backgroundColor: 'var(--bg-page)' }}>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
             Upload New Version
           </h3>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+            style={{ color: 'var(--text-tertiary)' }}
           >
             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -97,12 +97,12 @@ export default function UploadNewVersion({
           </button>
         </div>
 
-        <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mb-4 text-sm" style={{ color: 'var(--text-tertiary)' }}>
           Comments will be preserved across versions.
         </p>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-red-50 dark:bg-red-900/30 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+          <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -112,16 +112,17 @@ export default function UploadNewVersion({
             onDragOver={(e) => e.preventDefault()}
             onDrop={handleDrop}
             onClick={() => fileInputRef.current?.click()}
-            className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-8 hover:border-indigo-300 hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-700/50 dark:hover:border-indigo-500"
+            className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8"
+            style={{ borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-sidebar)' }}
           >
             {preview ? (
               <img src={preview} alt="Preview" className="max-h-48 rounded-lg object-contain" />
             ) : (
               <>
-                <svg className="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <svg className="h-10 w-10" style={{ color: 'var(--text-tertiary)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
-                <p className="mt-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+                <p className="mt-2 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                   Drop the updated design here
                 </p>
               </>
@@ -132,7 +133,8 @@ export default function UploadNewVersion({
             value={markdownContent}
             onChange={(e) => setMarkdownContent(e.target.value)}
             rows={10}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 font-mono text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-full rounded-lg border px-3 py-2 font-mono text-sm focus:outline-none"
+            style={{ borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           />
         )}
 
@@ -148,7 +150,7 @@ export default function UploadNewVersion({
         />
 
         <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <label className="block text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
             Change note (optional)
           </label>
           <input
@@ -156,21 +158,24 @@ export default function UploadNewVersion({
             value={changeNote}
             onChange={(e) => setChangeNote(e.target.value)}
             placeholder="e.g. Updated color scheme, fixed alignment..."
-            className="mt-1 w-full rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white px-3 py-2 text-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="mt-1 w-full rounded-lg border px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none"
+            style={{ borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
           />
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="rounded-lg border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="rounded-lg border px-4 py-2 text-sm font-medium"
+            style={{ borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' }}
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
             disabled={uploading || (designType === "IMAGE" ? !selectedFile : !markdownContent.trim())}
-            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ backgroundColor: 'var(--accent)' }}
           >
             {uploading ? "Uploading..." : "Upload New Version"}
           </button>

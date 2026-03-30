@@ -69,12 +69,17 @@ function FolderItem({
   return (
     <div>
       <div
-        className={`group flex items-center gap-1 rounded-md px-2 py-1.5 text-sm cursor-pointer transition-colors ${
+        className={`group flex items-center gap-1 rounded-[6px] px-2 py-1.5 text-sm cursor-pointer transition-colors ${
           isActive
-            ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 font-medium"
-            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            ? "font-medium"
+            : "hover-warm"
         }`}
-        style={{ paddingLeft: `${level * 16 + 8}px` }}
+        style={{
+          paddingLeft: `${level * 16 + 8}px`,
+          ...(isActive
+            ? { backgroundColor: "var(--bg-hover)", color: "var(--text-primary)" }
+            : { color: "var(--text-secondary)" }),
+        }}
         onClick={() => onSelectFolder(folder.id)}
       >
         <button
@@ -82,7 +87,8 @@ function FolderItem({
             e.stopPropagation();
             setExpanded(!expanded);
           }}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-gray-400 hover:text-gray-600"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px]"
+          style={{ color: "var(--text-tertiary)" }}
         >
           {hasChildren ? (
             <svg
@@ -100,7 +106,8 @@ function FolderItem({
         </button>
 
         <svg
-          className={`h-4 w-4 shrink-0 ${isActive ? "text-indigo-600 dark:text-indigo-400" : "text-gray-400"}`}
+          className="h-4 w-4 shrink-0"
+          style={{ color: isActive ? "var(--text-primary)" : "var(--text-tertiary)" }}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -127,7 +134,12 @@ function FolderItem({
             }}
             onBlur={handleRename}
             onClick={(e) => e.stopPropagation()}
-            className="w-full rounded border border-gray-300 dark:border-gray-600 px-2 py-0.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+            className="w-full rounded-[6px] px-2 py-0.5 text-sm focus:outline-none focus:ring-1"
+            style={{
+              border: "1px solid var(--border-subtle)",
+              backgroundColor: "var(--bg-hover)",
+              color: "var(--text-primary)",
+            }}
             autoFocus
           />
         ) : (
@@ -143,7 +155,7 @@ function FolderItem({
               {folder.name}
             </span>
             {!isOwnFolder && folderOwner && (
-              <span className="ml-1 text-[10px] text-gray-400 dark:text-gray-500 shrink-0" title="Read-only">
+              <span className="ml-1 text-[10px] shrink-0" style={{ color: "var(--text-tertiary)" }} title="Read-only">
                 <svg className="h-3 w-3 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -162,7 +174,8 @@ function FolderItem({
                   setRenameValue(folder.name);
                   setIsRenaming(true);
                 }}
-                className="rounded p-0.5 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
+                className="rounded-[6px] p-0.5 hover-warm"
+                style={{ color: "var(--text-tertiary)" }}
                 title="Rename folder"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -174,7 +187,8 @@ function FolderItem({
                   e.stopPropagation();
                   setShowNewFolder(true);
                 }}
-                className="rounded p-0.5 text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-gray-600 dark:hover:text-gray-300"
+                className="rounded-[6px] p-0.5 hover-warm"
+                style={{ color: "var(--text-tertiary)" }}
                 title="Add subfolder"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -189,7 +203,8 @@ function FolderItem({
                   e.stopPropagation();
                   setConfirmingDelete(true);
                 }}
-                className="rounded p-0.5 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/30 hover:text-red-600"
+                className="rounded-[6px] p-0.5 hover:bg-red-50 hover:text-red-600"
+                style={{ color: "var(--text-tertiary)" }}
                 title="Delete folder"
               >
                 <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -218,12 +233,18 @@ function FolderItem({
               }
             }}
             placeholder="Folder name"
-            className="w-full rounded border border-gray-300 dark:border-gray-600 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+            className="w-full rounded-[6px] px-2 py-1 text-sm focus:outline-none focus:ring-1"
+            style={{
+              border: "1px solid var(--border-subtle)",
+              backgroundColor: "var(--bg-hover)",
+              color: "var(--text-primary)",
+            }}
             autoFocus
           />
           <button
             onClick={handleCreateSubfolder}
-            className="rounded bg-indigo-600 p-1 text-white hover:bg-indigo-700"
+            className="rounded-[6px] p-1 text-white"
+            style={{ backgroundColor: "var(--bg-hover)", color: "var(--text-primary)" }}
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -234,7 +255,8 @@ function FolderItem({
               setShowNewFolder(false);
               setNewFolderName("");
             }}
-            className="rounded bg-gray-100 dark:bg-gray-600 p-1 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500"
+            className="rounded-[6px] p-1 hover-warm"
+            style={{ backgroundColor: "var(--bg-hover)", color: "var(--text-secondary)" }}
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -266,16 +288,22 @@ function FolderItem({
       {confirmingDelete && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
           <div className="fixed inset-0 bg-black/50" onClick={() => setConfirmingDelete(false)} />
-          <div className="relative z-10 w-full max-w-xs rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-xl">
+          <div
+            className="relative z-10 w-full max-w-xs rounded-xl p-5 shadow-xl"
+            style={{
+              border: "1px solid var(--border-subtle)",
+              backgroundColor: "var(--bg-sidebar)",
+            }}
+          >
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/30">
-                <svg className="h-5 w-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                <svg className="h-5 w-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Delete folder</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>Delete folder</h3>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-tertiary)" }}>
                   &quot;{folder.name}&quot; and all its contents will be permanently deleted.
                 </p>
               </div>
@@ -283,7 +311,11 @@ function FolderItem({
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setConfirmingDelete(false)}
-                className="rounded-lg border border-gray-300 dark:border-gray-600 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="rounded-[6px] px-3 py-1.5 text-sm font-medium hover-warm"
+                style={{
+                  border: "1px solid var(--border-subtle)",
+                  color: "var(--text-secondary)",
+                }}
               >
                 Cancel
               </button>
@@ -292,7 +324,7 @@ function FolderItem({
                   setConfirmingDelete(false);
                   onDeleteFolder(folder.id);
                 }}
-                className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
+                className="rounded-[6px] bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700"
               >
                 Delete
               </button>
@@ -335,12 +367,16 @@ export default function Sidebar({
 
   const sidebarInner = (
     <>
-      <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-4 py-3">
-        <h2 className="truncate text-sm font-semibold text-gray-900 dark:text-gray-100">{projectName}</h2>
+      <div
+        className="flex items-center justify-between px-4 py-3"
+        style={{ borderBottom: "1px solid var(--border-subtle)" }}
+      >
+        <h2 className="truncate text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{projectName}</h2>
         {onMobileClose && (
           <button
             onClick={onMobileClose}
-            className="lg:hidden rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+            className="lg:hidden rounded-[6px] p-1 hover-warm"
+            style={{ color: "var(--text-tertiary)" }}
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -351,11 +387,17 @@ export default function Sidebar({
 
       <div className="flex-1 overflow-y-auto p-2">
         <div className="mb-2 flex items-center justify-between px-2">
-          <span className="text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">Folders</span>
+          <span
+            className="text-[11px] font-medium uppercase tracking-wide"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            Folders
+          </span>
           {isAdmin && (
             <button
               onClick={() => setShowNewFolder(true)}
-              className="rounded p-1 text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-300"
+              className="rounded-[6px] p-1 hover-warm"
+              style={{ color: "var(--text-tertiary)" }}
               title="New folder"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -379,12 +421,18 @@ export default function Sidebar({
                 }
               }}
               placeholder="Folder name"
-              className="w-full rounded border border-gray-300 dark:border-gray-600 px-2 py-1 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              className="w-full rounded-[6px] px-2 py-1 text-sm focus:outline-none focus:ring-1"
+              style={{
+                border: "1px solid var(--border-subtle)",
+                backgroundColor: "var(--bg-hover)",
+                color: "var(--text-primary)",
+              }}
               autoFocus
             />
             <button
               onClick={handleCreateRootFolder}
-              className="rounded bg-indigo-600 p-1 text-white hover:bg-indigo-700"
+              className="rounded-[6px] p-1"
+              style={{ backgroundColor: "var(--bg-hover)", color: "var(--text-primary)" }}
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -395,7 +443,8 @@ export default function Sidebar({
                 setShowNewFolder(false);
                 setNewFolderName("");
               }}
-              className="rounded bg-gray-100 dark:bg-gray-600 p-1 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-500"
+              className="rounded-[6px] p-1 hover-warm"
+              style={{ backgroundColor: "var(--bg-hover)", color: "var(--text-secondary)" }}
             >
               <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -405,7 +454,7 @@ export default function Sidebar({
         )}
 
         {folders.length === 0 && !showNewFolder && (
-          <p className="px-2 py-4 text-center text-sm text-gray-400 dark:text-gray-500">
+          <p className="px-2 py-4 text-center text-sm" style={{ color: "var(--text-tertiary)" }}>
             No folders yet. Create one to get started.
           </p>
         )}
@@ -431,7 +480,10 @@ export default function Sidebar({
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex h-full w-64 flex-col border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <aside
+        className="hidden lg:flex h-full w-64 flex-col"
+        style={{ backgroundColor: "var(--bg-sidebar)" }}
+      >
         {sidebarInner}
       </aside>
 
@@ -439,7 +491,10 @@ export default function Sidebar({
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40">
           <div className="fixed inset-0 bg-black/50" onClick={onMobileClose} />
-          <aside className="relative z-10 flex h-full w-72 flex-col bg-white dark:bg-gray-800 shadow-xl">
+          <aside
+            className="relative z-10 flex h-full w-72 flex-col shadow-xl"
+            style={{ backgroundColor: "var(--bg-sidebar)" }}
+          >
             {sidebarInner}
           </aside>
         </div>

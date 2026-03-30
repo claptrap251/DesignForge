@@ -173,7 +173,11 @@ export async function runScrape(
     const now = new Date().toISOString().replace("T", " ").slice(0, 19) + " UTC";
     let indexContent = `# Scraped Markdown Index\n\n> Last synced ${now} | Source: ${target.githubName} | ${indexData.size} repos, ${totalFiles} files\n\n`;
     for (const [repoName, files] of indexData) {
-      indexContent += `${repoName}: ${files.join(", ")}\n`;
+      indexContent += `## ${repoName}\n\n`;
+      for (const file of files) {
+        indexContent += `- ${file}\n`;
+      }
+      indexContent += `\n`;
     }
     await upsertDesign(scrapedataId, "Index", indexContent.trimEnd());
 

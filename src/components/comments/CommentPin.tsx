@@ -15,13 +15,17 @@ interface CommentPinProps {
 export default function CommentPin({ pin, isSelected, onClick }: CommentPinProps) {
   if (pin.xPercent == null || pin.yPercent == null) return null;
 
-  const bgColor = pin.discarded
-    ? "bg-gray-400 line-through"
+  const pinColor = pin.discarded
+    ? 'var(--text-tertiary)'
     : isSelected
-      ? "bg-red-500 ring-2 ring-red-300"
+      ? '#ef4444'
       : pin.resolved
-        ? "bg-green-500"
-        : "bg-indigo-600";
+        ? 'var(--success)'
+        : 'var(--accent)';
+
+  const ringStyle = isSelected
+    ? { boxShadow: '0 0 0 2px rgba(239, 68, 68, 0.4)' }
+    : {};
 
   return (
     <div
@@ -36,7 +40,8 @@ export default function CommentPin({ pin, isSelected, onClick }: CommentPinProps
           e.stopPropagation();
           onClick(isSelected ? null : pin.id);
         }}
-        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white shadow-md transition-all hover:scale-110 hover:opacity-100 ${bgColor} ${isSelected ? "opacity-100" : "opacity-40"}`}
+        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold text-white shadow-md transition-all hover:scale-110 hover:opacity-100 ${pin.discarded ? 'line-through' : ''} ${isSelected ? "opacity-100" : "opacity-40"}`}
+        style={{ backgroundColor: pinColor, ...ringStyle }}
       >
         {pin.pinNumber}
       </button>

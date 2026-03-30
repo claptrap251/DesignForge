@@ -57,36 +57,36 @@ export default function CommentThread({
 
   return (
     <div
-      className={`cursor-pointer rounded-lg border p-3 transition-colors ${
+      className="cursor-pointer rounded-lg border p-3 transition-colors"
+      style={
         comment.discarded
-          ? "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 opacity-60"
+          ? { borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-sidebar)', opacity: 0.6 }
           : isSelected
-            ? "border-indigo-300 bg-indigo-50 dark:border-indigo-600 dark:bg-indigo-900/30"
-            : "border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-gray-300 dark:hover:border-gray-600"
-      }`}
+            ? { borderColor: 'var(--accent)', backgroundColor: 'var(--accent-bg)' }
+            : { borderColor: 'var(--border-subtle)', backgroundColor: 'var(--bg-page)' }
+      }
       onClick={onClick}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2">
           <span
-            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ${
-              comment.discarded ? "bg-gray-400" : comment.resolved ? "bg-green-500" : "bg-indigo-600"
-            }`}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+            style={{ backgroundColor: comment.discarded ? 'var(--text-tertiary)' : comment.resolved ? 'var(--success)' : 'var(--accent)' }}
           >
             {comment.pinNumber}
           </span>
           <div>
-            <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
               {comment.authorName || "Anonymous"}
             </span>
-            <span className="ml-2 text-xs text-gray-400">
+            <span className="ml-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
               {formatDate(comment.createdAt)}
             </span>
           </div>
         </div>
 
         {comment.discarded ? (
-          <span className="shrink-0 rounded-md px-2 py-1 text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
+          <span className="shrink-0 rounded-md px-2 py-1 text-xs font-medium" style={{ backgroundColor: 'var(--bg-code)', color: 'var(--text-tertiary)' }}>
             Discarded
           </span>
         ) : (
@@ -97,9 +97,10 @@ export default function CommentThread({
             }}
             className={`shrink-0 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
               comment.resolved
-                ? "bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/50"
-                : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                ? "bg-green-50 text-green-700 hover:bg-green-100"
+                : ""
             }`}
+            style={!comment.resolved ? { backgroundColor: 'var(--bg-code)', color: 'var(--text-secondary)' } : undefined}
             title={comment.resolved ? "Unresolve" : "Resolve"}
           >
           {comment.resolved ? "Resolved" : "Resolve"}
@@ -107,10 +108,10 @@ export default function CommentThread({
         )}
       </div>
 
-      <p className={`mt-2 text-sm ${comment.discarded ? "text-gray-400 dark:text-gray-500 line-through" : "text-gray-700 dark:text-gray-300"}`}>{comment.content}</p>
+      <p className={`mt-2 text-sm ${comment.discarded ? "line-through" : ""}`} style={{ color: comment.discarded ? 'var(--text-tertiary)' : 'var(--text-secondary)' }}>{comment.content}</p>
 
       {comment.anchorText && (
-        <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+        <div className="mt-1 flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m9.86-3.03a4.5 4.5 0 00-6.364-6.364L4.757 8.25a4.5 4.5 0 003.182 7.431" />
           </svg>
@@ -119,30 +120,30 @@ export default function CommentThread({
       )}
 
       {comment.anchorLine != null && (
-        <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
+        <div className="mt-1 flex items-center gap-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
           <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
           </svg>
           <span>Line {comment.anchorLine}</span>
           {comment.anchorHeading && (
-            <span className="text-gray-300">· {comment.anchorHeading}</span>
+            <span style={{ color: 'var(--border-medium)' }}>{comment.anchorHeading}</span>
           )}
         </div>
       )}
 
       {comment.replies && comment.replies.length > 0 && (
-        <div className="mt-3 space-y-2 border-l-2 border-gray-200 dark:border-gray-600 pl-3">
+        <div className="mt-3 space-y-2 border-l-2 pl-3" style={{ borderColor: 'var(--border-subtle)' }}>
           {comment.replies.map((reply: any) => (
             <div key={reply.id}>
               <div className="flex items-center gap-1.5">
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
                   {reply.authorName || "Anonymous"}
                 </span>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                   {formatDate(reply.createdAt)}
                 </span>
               </div>
-              <p className="mt-0.5 text-sm text-gray-600 dark:text-gray-400">{reply.content}</p>
+              <p className="mt-0.5 text-sm" style={{ color: 'var(--text-tertiary)' }}>{reply.content}</p>
             </div>
           ))}
         </div>
@@ -162,7 +163,8 @@ export default function CommentThread({
                 onChange={(e) => setReplyAuthor(e.target.value)}
                 placeholder="Your name"
                 required
-                className="block w-full rounded-md border border-gray-300 dark:border-gray-600 px-2.5 py-1.5 text-xs shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+                className="block w-full rounded-md border px-2.5 py-1.5 text-xs shadow-sm placeholder:text-gray-400 focus:outline-none"
+                style={{ borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
               />
             )}
             <textarea
@@ -171,7 +173,8 @@ export default function CommentThread({
               placeholder="Write a reply..."
               rows={2}
               required
-              className="block w-full rounded-md border border-gray-300 dark:border-gray-600 px-2.5 py-1.5 text-xs shadow-sm placeholder:text-gray-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 dark:bg-gray-700 dark:text-white"
+              className="block w-full rounded-md border px-2.5 py-1.5 text-xs shadow-sm placeholder:text-gray-400 focus:outline-none"
+              style={{ borderColor: 'var(--border-medium)', backgroundColor: 'var(--bg-page)', color: 'var(--text-primary)' }}
               autoFocus
             />
             <div className="flex justify-end gap-1.5">
@@ -181,14 +184,16 @@ export default function CommentThread({
                   setShowReplyForm(false);
                   setReplyContent("");
                 }}
-                className="rounded-md border border-gray-300 dark:border-gray-600 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                className="rounded-md border px-2 py-1 text-xs font-medium"
+                style={{ borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' }}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={!replyContent.trim() || (!sessionUser && !replyAuthor.trim())}
-                className="rounded-md bg-indigo-600 px-2 py-1 text-xs font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
+                className="rounded-md px-2 py-1 text-xs font-medium text-white disabled:opacity-50"
+                style={{ backgroundColor: 'var(--accent)' }}
               >
                 Reply
               </button>
@@ -201,14 +206,15 @@ export default function CommentThread({
                 e.stopPropagation();
                 setShowReplyForm(true);
               }}
-              className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+              className="text-xs font-medium"
+              style={{ color: 'var(--accent)' }}
             >
               Reply
             </button>
             {onDelete && sessionUser && (
               confirmDelete ? (
                 <span className="inline-flex items-center gap-1.5 ml-3" onClick={(e) => e.stopPropagation()}>
-                  <span className="text-xs text-red-600 dark:text-red-400">Delete this comment?</span>
+                  <span className="text-xs text-red-600">Delete this comment?</span>
                   <button
                     onClick={() => { onDelete(comment.id); setConfirmDelete(false); }}
                     className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-red-700"
@@ -217,7 +223,8 @@ export default function CommentThread({
                   </button>
                   <button
                     onClick={() => setConfirmDelete(false)}
-                    className="rounded-md border border-gray-300 dark:border-gray-600 px-2 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="rounded-md border px-2 py-0.5 text-xs font-medium"
+                    style={{ borderColor: 'var(--border-medium)', color: 'var(--text-secondary)' }}
                   >
                     No
                   </button>
@@ -225,7 +232,7 @@ export default function CommentThread({
               ) : (
                 <button
                   onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
-                  className="ml-3 text-xs font-medium text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  className="ml-3 text-xs font-medium text-red-500 hover:text-red-700"
                 >
                   Delete
                 </button>
