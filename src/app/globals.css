@@ -4,13 +4,67 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f9fafb;
-  --foreground: #111827;
+  --text-primary: #37352F;
+  --text-secondary: rgba(55, 53, 47, 0.65);
+  --text-tertiary: rgba(55, 53, 47, 0.4);
+  --bg-page: #FFFFFF;
+  --bg-sidebar: #F7F6F3;
+  --bg-hover: rgba(55, 53, 47, 0.06);
+  --bg-active: rgba(55, 53, 47, 0.1);
+  --bg-code: rgb(247, 246, 243);
+  --border-subtle: rgba(55, 53, 47, 0.09);
+  --border-medium: rgba(55, 53, 47, 0.15);
+  --accent: #337EA9;
+  --accent-hover: #2B6A8E;
+  --accent-bg: #E7F3F8;
+  --success: #448361;
+  --success-bg: #EDF3EC;
+  --warning: #CB912F;
+  --warning-bg: #FBF3DB;
+  --danger: #D44C47;
+  --danger-bg: #FDEBEC;
+  --badge-draft: #787774;
+  --badge-draft-bg: #F1F1EF;
+  --badge-review: #CB912F;
+  --badge-review-bg: #FBF3DB;
+  --badge-approved: #448361;
+  --badge-approved-bg: #EDF3EC;
+  --admin-text: #D9730D;
+  --admin-bg: #FAEBDD;
+  --background: var(--bg-page);
+  --foreground: var(--text-primary);
 }
 
 .dark {
-  --background: #111827;
-  --foreground: #f9fafb;
+  --text-primary: rgba(255, 255, 255, 0.9);
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --text-tertiary: rgba(255, 255, 255, 0.3);
+  --bg-page: #191919;
+  --bg-sidebar: #252525;
+  --bg-hover: rgba(255, 255, 255, 0.06);
+  --bg-active: rgba(255, 255, 255, 0.1);
+  --bg-code: #2F2F2F;
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-medium: rgba(255, 255, 255, 0.12);
+  --accent: #529CCA;
+  --accent-hover: #6BB0D6;
+  --accent-bg: rgba(82, 156, 202, 0.15);
+  --success: #4DAB9A;
+  --success-bg: rgba(77, 171, 154, 0.15);
+  --warning: #FFDC49;
+  --warning-bg: rgba(255, 220, 73, 0.15);
+  --danger: #FF7369;
+  --danger-bg: rgba(255, 115, 105, 0.15);
+  --badge-draft: #979A9B;
+  --badge-draft-bg: #454B4E;
+  --badge-review: #FFDC49;
+  --badge-review-bg: #59563B;
+  --badge-approved: #4DAB9A;
+  --badge-approved-bg: #354C4B;
+  --admin-text: #FFA344;
+  --admin-bg: rgba(255, 163, 68, 0.15);
+  --background: var(--bg-page);
+  --foreground: var(--text-primary);
 }
 
 @theme inline {
@@ -21,7 +75,7 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
 }
 
 .mermaid {
@@ -40,13 +94,9 @@ body {
 }
 
 .has-comment-highlight {
-  background-color: #fef3c7;
+  background-color: var(--warning-bg);
   border-radius: 0.25rem;
   transition: background-color 0.3s;
-}
-
-.dark .has-comment-highlight {
-  background-color: #78350f;
 }
 
 [data-source-line].cursor-crosshair-children {
@@ -61,32 +111,19 @@ body {
 
 .prose th,
 .prose td {
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-medium);
   padding: 0.625rem 1rem;
   text-align: left;
   line-height: 1.625;
 }
 
 .prose th {
-  background-color: #f3f4f6;
+  background-color: var(--bg-sidebar);
   font-weight: 600;
 }
 
 .prose tbody tr:nth-child(even) {
-  background-color: #f9fafb;
-}
-
-.dark .prose th,
-.dark .prose td {
-  border-color: #4b5563;
-}
-
-.dark .prose th {
-  background-color: #374151;
-}
-
-.dark .prose tbody tr:nth-child(even) {
-  background-color: #1f2937;
+  background-color: var(--bg-sidebar);
 }
 
 /* Ensure adequate line spacing in prose */
