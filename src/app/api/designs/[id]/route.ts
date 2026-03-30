@@ -4,6 +4,7 @@ import { unlink, writeFile, mkdir } from "fs/promises";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import { authenticateRequest } from "@/lib/apiAuth";
+import { getOwnerUsername, isOwnerOfDesign } from "@/lib/ownership";
 
 export async function GET(
   _request: NextRequest,
@@ -14,9 +15,6 @@ export async function GET(
   const design = await prisma.design.findUnique({
     where: { id },
     include: {
-      folder: {
-        select: { ownerUsername: true },
-      },
       comments: {
         orderBy: { pinNumber: "asc" },
         include: {
@@ -35,9 +33,24 @@ export async function GET(
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
   }
 
-  // Flatten ownerUsername to top level for client convenience
-  const { folder, ...rest } = design;
-  return NextResponse.json({ ...rest, ownerUsername: folder?.ownerUsername ?? null });
+  // Resolve ownerUsername by walking up the folder tree (subfolders don't
+  // store ownerUsername directly — only root-level user folders do).
+  const resolvedOwner = await getOwnerUsername(design.folderId);
+
+  // Build folder breadcrumb path by walking up the folder tree.
+  const folderPath: { id: string; name: string }[] = [];
+  let currentFolderId: string | null = design.folderId;
+  while (currentFolderId) {
+    const folder = await prisma.folder.findUnique({
+      where: { id: currentFolderId },
+      select: { id: true, name: true, parentId: true },
+    });
+    if (!folder) break;
+    folderPath.unshift({ id: folder.id, name: folder.name });
+    currentFolderId = folder.parentId;
+  }
+
+  return NextResponse.json({ ...design, ownerUsername: resolvedOwner, folderPath });
 }
 
 export async function PUT(
@@ -52,13 +65,16 @@ export async function PUT(
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
   }
 
+  // Permission model: only the folder-tree owner may edit a design.
+  // Ownership is resolved by walking up the folder hierarchy to the root
+  // user folder (the only level that stores ownerUsername).
   const { user } = await authenticateRequest(request);
-  if (user) {
-    const { isOwnerOfDesign } = await import("@/lib/ownership");
-    const owns = await isOwnerOfDesign(id, user.username);
-    if (!owns) {
-      return NextResponse.json({ error: "Cannot edit another user's design" }, { status: 403 });
-    }
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const owns = await isOwnerOfDesign(id, user.username);
+  if (!owns) {
+    return NextResponse.json({ error: "Cannot edit another user's design" }, { status: 403 });
   }
 
   // Handle multipart form data (new version upload)
@@ -215,13 +231,14 @@ export async function DELETE(
     return NextResponse.json({ error: "Design not found" }, { status: 404 });
   }
 
+  // Permission model: same as PUT — only the folder-tree owner may delete.
   const { user } = await authenticateRequest(request);
-  if (user) {
-    const { isOwnerOfDesign } = await import("@/lib/ownership");
-    const owns = await isOwnerOfDesign(id, user.username);
-    if (!owns) {
-      return NextResponse.json({ error: "Cannot edit another user's design" }, { status: 403 });
-    }
+  if (!user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const owns = await isOwnerOfDesign(id, user.username);
+  if (!owns) {
+    return NextResponse.json({ error: "Cannot delete another user's design" }, { status: 403 });
   }
 
   // Delete all version files and the current file
