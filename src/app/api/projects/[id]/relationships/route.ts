@@ -40,6 +40,7 @@ export async function GET(
       id: true,
       name: true,
       content: true,
+      folderId: true,
       folder: {
         select: { name: true, ownerUsername: true },
       },
@@ -63,17 +64,47 @@ export async function GET(
     );
   }
 
-  // Enrich with folder/owner info
-  const folderMap = new Map(
-    designs.map((d) => [d.id, { folder: d.folder.name, owner: d.folder.ownerUsername }])
-  );
+  // Build folder path for each design by walking up the folder tree
+  const folderPathCache = new Map<string, { id: string; name: string }[]>();
+  async function getFolderPath(folderId: string): Promise<{ id: string; name: string }[]> {
+    if (folderPathCache.has(folderId)) return folderPathCache.get(folderId)!;
+    const path: { id: string; name: string }[] = [];
+    let currentId: string | null = folderId;
+    while (currentId) {
+      const folder = await prisma.folder.findUnique({
+        where: { id: currentId },
+        select: { id: true, name: true, parentId: true },
+      });
+      if (!folder) break;
+      path.unshift({ id: folder.id, name: folder.name });
+      currentId = folder.parentId;
+    }
+    folderPathCache.set(folderId, path);
+    return path;
+  }
+
+  // Collect folder IDs referenced in the filtered relationships
+  const relatedIds = new Set<string>();
+  for (const r of relationships) {
+    relatedIds.add(r.docAId);
+    relatedIds.add(r.docBId);
+  }
+
+  const folderInfoMap = new Map<string, { owner: string | null; folderPath: { id: string; name: string }[] }>();
+  for (const d of designs) {
+    if (!relatedIds.has(d.id)) continue;
+    const folderPath = await getFolderPath(d.folderId);
+    folderInfoMap.set(d.id, { owner: d.folder.ownerUsername, folderPath });
+  }
 
   const enriched = relationships.map((r) => ({
     ...r,
-    docAFolder: folderMap.get(r.docAId)?.folder,
-    docAOwner: folderMap.get(r.docAId)?.owner,
-    docBFolder: folderMap.get(r.docBId)?.folder,
-    docBOwner: folderMap.get(r.docBId)?.owner,
+    docAFolder: folderInfoMap.get(r.docAId)?.folderPath.map((f) => f.name).join(" / "),
+    docAOwner: folderInfoMap.get(r.docAId)?.owner,
+    docAFolderPath: folderInfoMap.get(r.docAId)?.folderPath,
+    docBFolder: folderInfoMap.get(r.docBId)?.folderPath.map((f) => f.name).join(" / "),
+    docBOwner: folderInfoMap.get(r.docBId)?.owner,
+    docBFolderPath: folderInfoMap.get(r.docBId)?.folderPath,
   }));
 
   return NextResponse.json({ relationships: enriched });

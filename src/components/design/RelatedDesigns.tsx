@@ -8,6 +8,11 @@ interface RelatedDesignsProps {
   projectId: string;
 }
 
+interface FolderPathEntry {
+  id: string;
+  name: string;
+}
+
 interface Relationship {
   docAId: string;
   docBId: string;
@@ -21,6 +26,8 @@ interface Relationship {
   sharedTerms: string[];
   docAOwner?: string;
   docBOwner?: string;
+  docAFolderPath?: FolderPathEntry[];
+  docBFolderPath?: FolderPathEntry[];
 }
 
 export default function RelatedDesigns({ designId, projectId }: RelatedDesignsProps) {
@@ -89,6 +96,7 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
         const relatedId = isA ? rel.docBId : rel.docAId;
         const relatedName = isA ? rel.docBName : rel.docAName;
         const relatedOwner = isA ? rel.docBOwner : rel.docAOwner;
+        const relatedFolderPath = isA ? rel.docBFolderPath : rel.docAFolderPath;
         const bestChunk = isA ? rel.bestChunkB : rel.bestChunkA;
         const myChunk = isA ? rel.bestChunkA : rel.bestChunkB;
         const percent = Math.round(rel.score * 100);
@@ -115,14 +123,28 @@ export default function RelatedDesigns({ designId, projectId }: RelatedDesignsPr
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
+                {relatedFolderPath && relatedFolderPath.length > 0 && (
+                  <p className="text-xs text-gray-400 dark:text-gray-500 truncate mb-0.5">
+                    {relatedFolderPath.map((f, i) => (
+                      <span key={f.id}>
+                        {i > 0 && <span className="mx-0.5">/</span>}
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            window.location.href = navUrl(`/project/${projectId}?folder=${f.id}`);
+                          }}
+                          className="hover:text-indigo-500 dark:hover:text-indigo-400 hover:underline"
+                        >
+                          {f.name}
+                        </button>
+                      </span>
+                    ))}
+                  </p>
+                )}
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
                   {relatedName}
                 </p>
-                {relatedOwner && (
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                    by {relatedOwner}
-                  </p>
-                )}
               </div>
               <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${badgeColor}`}>
                 {percent}%
