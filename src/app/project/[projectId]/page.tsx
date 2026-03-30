@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { apiUrl } from "@/lib/basePath";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
@@ -17,10 +17,11 @@ export default function ProjectPage() {
   const params = useParams();
   const projectId = params.projectId as string;
 
+  const searchParams = useSearchParams();
   const currentUsername = (session?.user as any)?.username as string | undefined;
 
   const [project, setProject] = useState<any>(null);
-  const [activeFolder, setActiveFolder] = useState<string | null>(null);
+  const [activeFolder, setActiveFolder] = useState<string | null>(searchParams.get("folder"));
   const [showUpload, setShowUpload] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [loading, setLoading] = useState(true);
