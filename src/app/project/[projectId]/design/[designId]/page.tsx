@@ -304,10 +304,10 @@ export default function DesignViewerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
         <Header session={session} />
         <div className="flex items-center justify-center h-96">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--accent)' }}></div>
         </div>
       </div>
     );
@@ -315,25 +315,26 @@ export default function DesignViewerPage() {
 
   if (!design) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
         <Header session={session} />
         <div className="flex items-center justify-center h-96">
-          <p className="text-gray-500 dark:text-gray-400">Design not found</p>
+          <p style={{ color: 'var(--text-tertiary)' }}>Design not found</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
       <Header session={session} />
 
       {/* Toolbar */}
-      <div className="shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2 flex items-center justify-between">
+      <div className="shrink-0 border-b px-4 py-2 flex items-center justify-between" style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-subtle)' }}>
         <div className="flex items-center gap-3">
           <button
             onClick={() => router.push(`/project/${projectId}`)}
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+            className="hover-warm"
+            style={{ color: 'var(--text-tertiary)' }}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -341,13 +342,13 @@ export default function DesignViewerPage() {
           </button>
           <div className="flex items-center gap-1 min-w-0">
             {design.folderPath && design.folderPath.length > 0 && (
-              <span className="hidden sm:flex items-center gap-1 text-sm text-gray-400 dark:text-gray-500 shrink-0">
+              <span className="hidden sm:flex items-center gap-1 text-sm shrink-0" style={{ color: 'var(--text-tertiary)' }}>
                 {design.folderPath.map((f: { id: string; name: string }, i: number) => (
                   <span key={f.id} className="flex items-center gap-1">
                     {i > 0 && <span>/</span>}
                     <button
                       onClick={() => router.push(`/project/${projectId}?folder=${f.id}`)}
-                      className="hover:text-indigo-500 dark:hover:text-indigo-400 hover:underline"
+                      className="hover-warm hover:underline"
                     >
                       {f.name}
                     </button>
@@ -356,9 +357,9 @@ export default function DesignViewerPage() {
                 <span>/</span>
               </span>
             )}
-            <h2 className="font-medium text-gray-900 dark:text-gray-100 truncate max-w-[120px] sm:max-w-none">{design.name}</h2>
+            <h2 className="font-medium truncate max-w-[120px] sm:max-w-none" style={{ color: 'var(--text-primary)' }}>{design.name}</h2>
           </div>
-          <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded hidden sm:inline">
+          <span className="text-xs px-2 py-0.5 rounded hidden sm:inline" style={{ color: 'var(--text-tertiary)', backgroundColor: 'var(--bg-code)' }}>
             {design.type}
           </span>
           {/* Status selector */}
@@ -366,13 +367,15 @@ export default function DesignViewerPage() {
             <button
               onClick={() => setShowStatusMenu(!showStatusMenu)}
               disabled={statusUpdating}
-              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition disabled:opacity-50 ${
-                design.status === "APPROVED"
-                  ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
+              className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium transition disabled:opacity-50"
+              style={{
+                borderRadius: '3px',
+                ...(design.status === "APPROVED"
+                  ? { color: 'var(--badge-approved)', backgroundColor: 'var(--badge-approved-bg)' }
                   : design.status === "IN_REVIEW"
-                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300"
-                  : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
-              }`}
+                  ? { color: 'var(--badge-review)', backgroundColor: 'var(--badge-review-bg)' }
+                  : { color: 'var(--badge-draft)', backgroundColor: 'var(--badge-draft-bg)' }),
+              }}
             >
               {statusUpdating ? "Updating..." : design.status === "IN_REVIEW" ? "In Review" : design.status === "APPROVED" ? "Approved" : "Draft"}
               <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,39 +383,42 @@ export default function DesignViewerPage() {
               </svg>
             </button>
             {showStatusMenu && (
-              <div className="absolute left-0 top-full mt-1 w-40 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg z-30">
+              <div className="absolute left-0 top-full mt-1 w-40 rounded-lg py-1 shadow-lg z-30" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-subtle)' }}>
                 <button
                   onClick={() => handleStatusChange("DRAFT")}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover-warm"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  <span className="inline-block h-2 w-2 rounded-full bg-gray-400" />
+                  <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--badge-draft)' }} />
                   Draft
                   {design.status === "DRAFT" && (
-                    <svg className="ml-auto h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="ml-auto h-4 w-4" style={{ color: 'var(--text-tertiary)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                 </button>
                 <button
                   onClick={() => handleStatusChange("IN_REVIEW")}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover-warm"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  <span className="inline-block h-2 w-2 rounded-full bg-amber-400" />
+                  <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--badge-review)' }} />
                   In Review
                   {design.status === "IN_REVIEW" && (
-                    <svg className="ml-auto h-4 w-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="ml-auto h-4 w-4" style={{ color: 'var(--badge-review)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
                 </button>
                 <button
                   onClick={() => handleStatusChange("APPROVED")}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover-warm"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  <span className="inline-block h-2 w-2 rounded-full bg-green-400" />
+                  <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: 'var(--badge-approved)' }} />
                   Approved
                   {design.status === "APPROVED" && (
-                    <svg className="ml-auto h-4 w-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="ml-auto h-4 w-4" style={{ color: 'var(--badge-approved)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                     </svg>
                   )}
@@ -450,7 +456,8 @@ export default function DesignViewerPage() {
             <button
               onClick={() => setShowExportMenu(!showExportMenu)}
               disabled={exporting}
-              className="flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium hover-warm disabled:opacity-50"
+              style={{ color: 'var(--text-secondary)' }}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -461,44 +468,49 @@ export default function DesignViewerPage() {
               </svg>
             </button>
             {showExportMenu && (
-              <div className="absolute right-0 top-full mt-1 w-52 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-1 shadow-lg z-20">
+              <div className="absolute right-0 top-full mt-1 w-52 rounded-lg py-1 shadow-lg z-20" style={{ backgroundColor: 'var(--bg-page)', border: '1px solid var(--border-subtle)' }}>
                 {design.type === "MARKDOWN" && design.content && (
                   <button
                     onClick={() => handleExportDesign("md")}
-                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm hover-warm"
+                    style={{ color: 'var(--text-secondary)' }}
                   >
-                    <span className="w-5 text-center text-xs font-bold text-gray-400">MD</span>
+                    <span className="w-5 text-center text-xs font-bold" style={{ color: 'var(--text-tertiary)' }}>MD</span>
                     Markdown
                   </button>
                 )}
                 <button
                   onClick={() => handleExportDesign("html")}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover-warm"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  <span className="w-5 text-center text-xs font-bold text-gray-400">{"<>"}</span>
+                  <span className="w-5 text-center text-xs font-bold" style={{ color: 'var(--text-tertiary)' }}>{"<>"}</span>
                   HTML
                 </button>
                 <button
                   onClick={() => handleExportDesign("docx")}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover-warm"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  <span className="w-5 text-center text-xs font-bold text-blue-400">W</span>
+                  <span className="w-5 text-center text-xs font-bold" style={{ color: 'var(--accent)' }}>W</span>
                   Word
                 </button>
                 <button
                   onClick={() => handleExportDesign("confluence")}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover-warm"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  <span className="w-5 text-center text-xs font-bold text-indigo-400">C</span>
+                  <span className="w-5 text-center text-xs font-bold" style={{ color: 'var(--accent)' }}>C</span>
                   Confluence
                 </button>
-                <div className="border-t border-gray-100 dark:border-gray-700 my-1" />
+                <div className="my-1" style={{ borderTop: '1px solid var(--border-subtle)' }} />
                 <button
                   onClick={handleCopyConfluence}
                   disabled={copyStatus === "copying"}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover-warm disabled:opacity-50"
+                  style={{ color: 'var(--text-secondary)' }}
                 >
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
                   </svg>
                   {copyStatus === "copying" ? "Copying..." : "Copy Confluence"}
@@ -509,7 +521,8 @@ export default function DesignViewerPage() {
           {design.type === "MARKDOWN" && !isEditing && (!viewingVersion || viewingVersion.version === design.currentVersion) && sessionUser?.username && design.ownerUsername === sessionUser.username && (
             <button
               onClick={() => setIsEditing(true)}
-              className="flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium hover-warm"
+              style={{ color: 'var(--text-secondary)' }}
             >
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -520,7 +533,8 @@ export default function DesignViewerPage() {
           {!isEditing && sessionUser?.username && design.ownerUsername === sessionUser.username && (
           <button
             onClick={() => setShowUploadVersion(true)}
-            className="flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium hover-warm"
+            style={{ color: 'var(--text-secondary)' }}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -534,8 +548,9 @@ export default function DesignViewerPage() {
             className={`px-2 sm:px-3 py-1.5 rounded-lg text-sm font-medium transition flex items-center gap-1 ${
               isAddMode
                 ? "bg-red-100 text-red-700 hover:bg-red-200"
-                : "bg-indigo-600 text-white hover:bg-indigo-700"
+                : "text-white"
             }`}
+            style={!isAddMode ? { backgroundColor: 'var(--accent)' } : undefined}
           >
             {isAddMode ? (
               <>
@@ -558,7 +573,8 @@ export default function DesignViewerPage() {
           {!isEditing && (
           <button
             onClick={() => setCommentSidebarOpen(true)}
-            className="lg:hidden flex items-center gap-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="lg:hidden flex items-center gap-1 rounded-lg px-2 py-1.5 text-sm font-medium hover-warm"
+            style={{ color: 'var(--text-secondary)' }}
             aria-label="Show comments"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -693,7 +709,7 @@ export default function DesignViewerPage() {
       {pendingAnchorLine !== null && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
           <div className="mb-1 text-center">
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-medium text-indigo-700">
+            <span className="rounded-full px-2 py-0.5 text-xs font-medium" style={{ color: 'var(--accent)', backgroundColor: 'var(--bg-code)' }}>
               Commenting on line {pendingAnchorLine}
             </span>
           </div>
