@@ -44,6 +44,7 @@ export default function DesignViewerPage() {
   const [pendingAnchorLine, setPendingAnchorLine] = useState<number | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [sidebarTab, setSidebarTab] = useState<SidebarTab>("comments");
+  const [isAdminUser, setIsAdminUser] = useState(false);
 
   const sessionUser = session?.user?.id
     ? { id: session.user.id, name: session.user.name ?? undefined, username: (session.user as any).username ?? undefined }
@@ -60,6 +61,13 @@ export default function DesignViewerPage() {
   useEffect(() => {
     fetchDesign();
   }, [fetchDesign]);
+
+  useEffect(() => {
+    fetch(apiUrl("/api/admin/check"))
+      .then((r) => r.json())
+      .then((d) => setIsAdminUser(d.isAdmin === true))
+      .catch(() => {});
+  }, []);
 
   // Close export menu on outside click
   useEffect(() => {
@@ -305,7 +313,7 @@ export default function DesignViewerPage() {
   if (loading) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
-        <Header session={session} />
+        <Header session={session} isAdmin={isAdminUser} />
         <div className="flex items-center justify-center h-96">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--accent)' }}></div>
         </div>
@@ -316,7 +324,7 @@ export default function DesignViewerPage() {
   if (!design) {
     return (
       <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
-        <Header session={session} />
+        <Header session={session} isAdmin={isAdminUser} />
         <div className="flex items-center justify-center h-96">
           <p style={{ color: 'var(--text-tertiary)' }}>Design not found</p>
         </div>
@@ -326,7 +334,7 @@ export default function DesignViewerPage() {
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" style={{ backgroundColor: 'var(--bg-sidebar)' }}>
-      <Header session={session} />
+      <Header session={session} isAdmin={isAdminUser} />
 
       {/* Toolbar */}
       <div className="shrink-0 border-b px-4 py-2 flex items-center justify-between" style={{ backgroundColor: 'var(--bg-page)', borderColor: 'var(--border-subtle)' }}>
