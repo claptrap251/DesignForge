@@ -95,7 +95,7 @@ export async function authenticateRequest(request: NextRequest): Promise<AuthRes
     return {
       user: {
         id: session.user.id,
-        username: (session.user as any).username,
+        username: (session.user as Record<string, unknown>).username as string,
         name: session.user.name,
       },
       method: "session",
