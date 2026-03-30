@@ -66,6 +66,19 @@ Implemented as CSS custom properties in `globals.css`, referenced by Tailwind vi
 }
 ```
 
+## Logo
+
+Replace the current indigo geometric logo with a minimalist "D" monogram incorporating a folder + wrench/tool element (Option 1 from the Gemini concepts).
+
+**SVG implementation:**
+- Main "D" shape + folder element: `var(--text-primary)` (#37352F light, rgba(255,255,255,0.9) dark)
+- Wrench/tool accent: `var(--accent)` (#337EA9 light, #529CCA dark)
+- Size: 28x28px in header, scalable SVG
+- No text in the logo mark itself — "DesignForge" text stays as a separate `<span>` next to the icon
+- Favicon: same mark at 32x32px
+
+The logo should feel like a craft tool — design + forge — without being literal or heavy.
+
 ## Component Specs
 
 ### globals.css
